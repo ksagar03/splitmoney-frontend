@@ -4,7 +4,7 @@ import { ApolloClient, InMemoryCache } from '@apollo/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const httpLink = new HttpLink({
-uri: 'http://192.168.1.X:4000/graphql',
+uri: process.env.EXPO_PUBLIC_GRAPHQL_URI,
 })
 
 const authLink = new SetContextLink(async ({headers}: any, _operation) => {
