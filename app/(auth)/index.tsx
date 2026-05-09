@@ -1,6 +1,6 @@
 import { LOGIN_MUTATION, REGISTER_MUTATION } from "@/src/graphql/mutation";
 import { useAuthStore } from "@/src/store/useAuthStore";
-import { useMutation } from "@apollo/client/react";
+import { useMutation } from "@apollo/client";
 import React, { useState } from "react";
 import {
   ActivityIndicator,

@@ -1,5 +1,6 @@
-
+import { client } from "@/src/graphql/apolloClient";
 import { useAuthStore } from "@/src/store/useAuthStore";
+import { ApolloProvider } from "@apollo/client";
 import {Slot, useRouter, useSegments } from "expo-router";
 import {useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,4 +30,12 @@ function AuthGuard() {
 
   if (isBootstrapping) return null;
   return <Slot />;
+}
+
+export default function RootLayout() {
+  return (
+    <ApolloProvider client={client}>
+      <AuthGuard />
+    </ApolloProvider>
+  );
 }
