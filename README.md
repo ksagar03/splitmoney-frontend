@@ -35,7 +35,6 @@ splitmoney-frontend/
 │   │   └── mutation.tsx      # LOGIN_MUTATION, REGISTER_MUTATION
 │   └── store/
 │       └── useAuthStore.tsx  # Zustand: user, token, isAuthenticated, setAuth, logout
-├── metro.config.js           # Enables package exports resolution for Apollo Client
 ├── app.json                  # Expo config (new arch, typed routes, React Compiler)
 ├── .env.local                # Local env vars (not committed)
 ├── package.json
