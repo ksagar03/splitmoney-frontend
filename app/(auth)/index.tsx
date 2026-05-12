@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SplitMoneyLogo from "@/src/components/SplitMoneyLogo";
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -161,14 +162,7 @@ export default function AuthScreen() {
 
             {/* Logo */}
             <View style={styles.logoWrapper}>
-              <LinearGradient
-                colors={["#8B5CF6", "#3B82F6"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.logoGradient}
-              >
-                <Text style={styles.logoText}>S</Text>
-              </LinearGradient>
+              <SplitMoneyLogo size={64} bgColor="#0E0E1C" />
             </View>
 
             {/* Header */}
@@ -376,21 +370,9 @@ const styles = StyleSheet.create({
   logoWrapper: {
     alignItems: "center",
     marginBottom: 24,
+    paddingTop: 8,   // breathing room for the glow ring
+    paddingHorizontal: 8,
   },
-  logoGradient: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoText: {
-    color: "#FFFFFF",
-    fontSize: 26,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-
   // ── Header ──────────────────────────────────────────────────────────────────
   header: {
     alignItems: "center",

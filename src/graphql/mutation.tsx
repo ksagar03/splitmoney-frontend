@@ -25,3 +25,29 @@ export const REGISTER_MUTATION = gql`
     }
   }
 `;
+
+export const GET_GROUPS = gql`
+  query GetGroups {
+    groups {
+      id
+      name
+      members {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const CREATE_GROUP = gql`
+mutation CreateGroup($name: String!, $members: [ID!]!){
+  createGroup(name: $name, members: $members) {
+    id
+    name
+    members {
+      id
+      name
+    }
+  }
+}
+`;
