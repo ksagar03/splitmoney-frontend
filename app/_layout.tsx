@@ -24,8 +24,10 @@ function AuthGuard() {
   useEffect(() => {
     if (isBootstrapping) return;
     const inAuthGroup = segments[0] === '(auth)';
-    if (!isAuthenticated && !inAuthGroup) router.replace('/(auth)');
-    else if (isAuthenticated && inAuthGroup) router.replace('/');
+    // Read current store state directly to avoid race between Zustand + React batching
+    const authed = useAuthStore.getState().isAuthenticated;
+    if (!authed && !inAuthGroup) router.replace('/(auth)');
+    else if (authed && inAuthGroup) router.replace('/(tabs)');
   }, [isAuthenticated, segments, isBootstrapping, router]);
 
   if (isBootstrapping) return null;
