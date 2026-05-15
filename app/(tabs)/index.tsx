@@ -1,23 +1,26 @@
+import AppHeader from "@/src/components/AppHeader";
 import { GET_GROUPS } from "@/src/graphql/mutation";
 import { useQuery } from "@apollo/client";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
   ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function GroupsScreen() {
   const router = useRouter();
+
   const { data, loading, error, refetch } = useQuery(GET_GROUPS, {
     fetchPolicy: "cache-and-network",
   });
+
   const renderGroupCard = ({ item }: { item: any }) => (
     <TouchableOpacity
       activeOpacity={0.8}
@@ -27,23 +30,31 @@ export default function GroupsScreen() {
       style={styles.card}
     >
       <View style={styles.cardHeader}>
-        <Text>{item.name}</Text>
-        <View style={styles.avatarContainer}>
+        <Text style={styles.groupName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <View style={styles.memberAvatarContainer}>
           {item.members.slice(0, 3).map((member: any, index: number) => (
             <View
               key={member.id}
-              style={[styles.avatar, { left: index * -10 }]}
+              style={[styles.memberAvatar, { left: index * -10 }]}
             >
-             <Text style={styles.avatarText}>
+              <Text style={styles.memberAvatarText}>
                 {member.name.charAt(0).toUpperCase()}
               </Text>
             </View>
           ))}
           {item.members.length > 3 && (
             <View
-              style={[styles.avatar, styles.overFlowAvatar, { left: 3 * -10 }]}
+              style={[
+                styles.memberAvatar,
+                styles.overflowAvatar,
+                { left: 3 * -10 },
+              ]}
             >
-              <Text style={styles.avatarText}>+{item.members.length - 3}</Text>
+              <Text style={styles.memberAvatarText}>
+                +{item.members.length - 3}
+              </Text>
             </View>
           )}
         </View>
@@ -61,9 +72,9 @@ export default function GroupsScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.blobTopRight} />
       <View style={styles.blobBottomLeft} />
-      <View style={styles.header}>
-        <Text style={styles.title}>Your Groups</Text>
-      </View>
+
+      <AppHeader title="Your Groups" />
+
       {loading && !data ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#8B5CF6" />
@@ -83,11 +94,13 @@ export default function GroupsScreen() {
           refreshing={loading}
           ListEmptyComponent={
             <Text style={styles.emptyText}>
-              No groups yet. Create one to get started!{" "}
+              No groups yet. Create one to get started!
             </Text>
           }
         />
       )}
+
+      {/* ── FAB ── */}
       <TouchableOpacity
         style={styles.fabWrapper}
         activeOpacity={0.8}
@@ -105,6 +118,7 @@ export default function GroupsScreen() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#080812" },
   blobTopRight: {
@@ -125,13 +139,8 @@ const styles = StyleSheet.create({
     bottom: -60,
     left: -60,
   },
-  header: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 16 },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 32,
-    fontWeight: 800,
-    letterSpacing: -0.5,
-  },
+
+  // ── List ──────────────────────────────────────────────────────────────────
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { color: "#EF4444", fontSize: 16 },
   emptyText: {
@@ -141,14 +150,16 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   listContent: { paddingHorizontal: 24, paddingBottom: 100 },
+
+  // ── Card ──────────────────────────────────────────────────────────────────
   card: {
     backgroundColor: "#0E0E1C",
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(139,92,246, 0.18)",
+    borderColor: "rgba(139, 92, 246, 0.18)",
     padding: 24,
     marginBottom: 16,
-    shadowColor: "#885CF6",
+    shadowColor: "#8B5CF6",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -163,12 +174,13 @@ const styles = StyleSheet.create({
   groupName: {
     color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: 700,
+    fontWeight: "700",
     letterSpacing: 0.3,
     flex: 1,
+    paddingRight: 10,
   },
-  avatarContainer: { flexDirection: "row", marginLeft: 10 },
-  avatar: {
+  memberAvatarContainer: { flexDirection: "row" },
+  memberAvatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -178,21 +190,38 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#0E0E1C",
   },
-  overFlowAvatar: {
-    backgroundColor: "#3B82F6",
-  },
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: 700,
-  },
+  overflowAvatar: { backgroundColor: "#3B82F6" },
+  memberAvatarText: { color: "#FFFFFF", fontSize: 12, fontWeight: "700" },
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  footerLabel: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  totalAmount: { color: "#FFFFFF", fontSize: 24, fontWeight: "800" },
+
+  // ── FAB ───────────────────────────────────────────────────────────────────
+  fabWrapper: {
+    position: "absolute",
+    bottom: 30,
+    right: 24,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  fab: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
     alignItems: "center",
   },
-  footerLabel: {},
-  totalAmount: {},
-  fabWrapper: {},
-  fab: {},
 });

@@ -5,7 +5,6 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   Animated,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -19,6 +18,22 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SplitMoneyLogo from "@/src/components/SplitMoneyLogo";
 
+/** Converts raw backend error strings into user-friendly messages. */
+function mapAuthError(raw: string): string {
+  const msg = raw.toLowerCase();
+  if (!raw || msg.includes("internal_error") || msg.includes("internal server"))
+    return "Something went wrong on our end. Please try again.";
+  if (msg.includes("invalid credentials") || msg.includes("bad credentials") || msg.includes("unauthorized"))
+    return "Incorrect email or password. Please try again.";
+  if (msg.includes("user not found") || msg.includes("no user"))
+    return "No account found with that email.";
+  if (msg.includes("already exists") || msg.includes("duplicate") || msg.includes("email taken"))
+    return "An account with this email already exists.";
+  if (msg.includes("network") || msg.includes("failed to fetch") || msg.includes("econnrefused"))
+    return "Can't reach the server. Check your connection.";
+  return raw; // known, readable message — show as-is
+}
+
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState("");
@@ -26,6 +41,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -47,6 +63,20 @@ export default function AuthScreen() {
 
   // Title fade when toggling mode
   const titleOpacity = useRef(new Animated.Value(1)).current;
+
+  // Error shake
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  const triggerShake = () => {
+    shakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10,  duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 8,   duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -8,  duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0,   duration: 40, useNativeDriver: true }),
+    ]).start();
+  };
 
   useEffect(() => {
     Animated.spring(cardAnim, {
@@ -95,9 +125,15 @@ export default function AuthScreen() {
 
   // ── Submit ───────────────────────────────────────────────────────────────────
 
+  const showError = (msg: string) => {
+    setErrorMessage(msg);
+    triggerShake();
+  };
+
   const handleSubmit = async () => {
+    setErrorMessage(null);
     if (!email || !password || (!isLogin && !name)) {
-      Alert.alert("Missing fields", "Please fill in all fields.");
+      showError("Please fill in all fields.");
       return;
     }
     try {
@@ -109,11 +145,13 @@ export default function AuthScreen() {
         await setAuth(register.user, register.token);
       }
     } catch (error: any) {
-      const message =
+      const raw: string =
         error.graphQLErrors?.[0]?.message ??
         error.networkError?.message ??
-        "Something went wrong. Please try again.";
-      Alert.alert("Authentication failed", message);
+        "";
+
+      const message = mapAuthError(raw);
+      showError(message);
     }
   };
 
@@ -128,6 +166,7 @@ export default function AuthScreen() {
           outputRange: [48, 0],
         }),
       },
+      { translateX: shakeAnim },
     ],
   };
 
@@ -190,7 +229,7 @@ export default function AuthScreen() {
                     placeholder="Enter your name"
                     placeholderTextColor="#3D3D5C"
                     value={name}
-                    onChangeText={setName}
+                    onChangeText={(v) => { setName(v); setErrorMessage(null); }}
                     autoCapitalize="words"
                     editable={!isLoading}
                     onFocus={() => setFocusedField("name")}
@@ -210,7 +249,7 @@ export default function AuthScreen() {
                   placeholder="Enter your email"
                   placeholderTextColor="#3D3D5C"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(v) => { setEmail(v); setErrorMessage(null); }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   editable={!isLoading}
@@ -233,7 +272,7 @@ export default function AuthScreen() {
                     placeholder="Enter your password"
                     placeholderTextColor="#3D3D5C"
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(v) => { setPassword(v); setErrorMessage(null); }}
                     secureTextEntry={!showPassword}
                     editable={!isLoading}
                     onFocus={() => setFocusedField("password")}
@@ -250,6 +289,13 @@ export default function AuthScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
+
+              {/* Inline error banner */}
+              {errorMessage && (
+                <View style={styles.errorBanner}>
+                  <Text style={styles.errorBannerText}>{errorMessage}</Text>
+                </View>
+              )}
 
               {/* Submit button */}
               <Animated.View style={[styles.buttonWrapper, { transform: [{ scale: buttonScale }] }]}>
@@ -446,6 +492,25 @@ const styles = StyleSheet.create({
     color: ACCENT,
     fontSize: 13,
     fontWeight: "600",
+  },
+
+  // ── Error banner ────────────────────────────────────────────────────────────
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  errorBannerText: {
+    color: "#FCA5A5",
+    fontSize: 13,
+    fontWeight: "500",
+    flex: 1,
   },
 
   // ── Button ──────────────────────────────────────────────────────────────────
