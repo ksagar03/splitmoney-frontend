@@ -14,24 +14,43 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SplitMoneyLogo from "@/src/components/SplitMoneyLogo";
 
-/** Converts raw backend error strings into user-friendly messages. */
-function mapAuthError(raw: string): string {
-  const msg = raw.toLowerCase();
-  if (!raw || msg.includes("internal_error") || msg.includes("internal server"))
-    return "Something went wrong on our end. Please try again.";
-  if (msg.includes("invalid credentials") || msg.includes("bad credentials") || msg.includes("unauthorized"))
-    return "Incorrect email or password. Please try again.";
-  if (msg.includes("user not found") || msg.includes("no user"))
-    return "No account found with that email.";
-  if (msg.includes("already exists") || msg.includes("duplicate") || msg.includes("email taken"))
-    return "An account with this email already exists.";
-  if (msg.includes("network") || msg.includes("failed to fetch") || msg.includes("econnrefused"))
-    return "Can't reach the server. Check your connection.";
-  return raw; // known, readable message — show as-is
+/**
+ * Maps the structured error from the backend into a user-friendly message.
+ *
+ * Priority order:
+ * 1. Extension code  — sent by AuthException via GraphQLExceptionHandler (most reliable)
+ * 2. Network error   — Apollo wraps connection failures separately
+ * 3. Fallback        — show the raw message if it looks human-readable
+ */
+function resolveAuthError(error: any): string {
+  // 1. Structured code from backend extensions
+  const code: string | undefined = error.graphQLErrors?.[0]?.extensions?.code;
+  if (code) {
+    switch (code) {
+      case "INVALID_CREDENTIALS":       return "Incorrect email or password.";
+      case "USER_NOT_FOUND":            return "No account found with that email.";
+      case "EMAIL_ALREADY_REGISTERED":  return "An account with this email already exists.";
+      case "SOCIAL_LOGIN_REQUIRED":     return error.graphQLErrors[0].message; // provider-specific, show as-is
+      case "MISSING_FIELDS":            return "Please fill in all fields.";
+      default:                          return error.graphQLErrors[0].message ?? "Something went wrong.";
+    }
+  }
+
+  // 2. Network-level failure (server down, wrong URL, CORS)
+  if (error.networkError) {
+    return "Can't reach the server. Check your connection and try again.";
+  }
+
+  // 3. Unclassified GraphQL error — show the raw message if present
+  const raw: string = error.graphQLErrors?.[0]?.message ?? "";
+  if (raw && !raw.toLowerCase().includes("internal")) return raw;
+
+  return "Something went wrong. Please try again.";
 }
 
 export default function AuthScreen() {
@@ -145,13 +164,7 @@ export default function AuthScreen() {
         await setAuth(register.user, register.token);
       }
     } catch (error: any) {
-      const raw: string =
-        error.graphQLErrors?.[0]?.message ??
-        error.networkError?.message ??
-        "";
-
-      const message = mapAuthError(raw);
-      showError(message);
+      showError(resolveAuthError(error));
     }
   };
 
@@ -283,9 +296,11 @@ export default function AuthScreen() {
                     onPress={() => setShowPassword(!showPassword)}
                     disabled={isLoading}
                   >
-                    <Text style={styles.eyeText}>
-                      {showPassword ? "Hide" : "Show"}
-                    </Text>
+                    <Ionicons
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={ACCENT}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -488,10 +503,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  eyeText: {
-    color: ACCENT,
-    fontSize: 13,
-    fontWeight: "600",
+  eyeIcon: {
+    // eyeButton already handles padding; this is a placeholder kept for override
   },
 
   // ── Error banner ────────────────────────────────────────────────────────────

@@ -35,19 +35,32 @@ export const GET_GROUPS = gql`
         id
         name
       }
+      expenses {
+        amount
+      }
+    }
+  }
+`;
+
+export const GET_USERS = gql`
+  query GetUsers {
+    users {
+      id
+      name
+      email
     }
   }
 `;
 
 export const CREATE_GROUP = gql`
-mutation CreateGroup($name: String!, $members: [ID!]!){
-  createGroup(name: $name, members: $members) {
-    id
-    name
-    members {
+  mutation CreateGroup($input: CreateGroupInput!) {
+    createGroup(input: $input) {
       id
       name
+      members {
+        id
+        name
+      }
     }
   }
-}
 `;

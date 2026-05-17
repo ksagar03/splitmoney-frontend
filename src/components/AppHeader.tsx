@@ -10,15 +10,18 @@ import {
   Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {useRouter} from "expo-router";
 
 interface Props {
   title: string;
+  showBackButton?: boolean;
 }
 
-export default function AppHeader({ title }: Props) {
+export default function AppHeader({ title, showBackButton }: Props) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [showProfile, setShowProfile] = useState(false);
+  const router = useRouter();
 
   const userInitial = user?.name?.charAt(0).toUpperCase() ?? "?";
 
@@ -30,7 +33,15 @@ export default function AppHeader({ title }: Props) {
   return (
     <>
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
+        <View style= {styles.leftContainer}>
+          {showBackButton && (
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.7}>
+              <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <Text style={[styles.title, showBackButton && styles.titleSmall]}>{title}</Text>
+        <View style={styles.rightContainer}>
         <TouchableOpacity
           onPress={() => setShowProfile(true)}
           activeOpacity={0.8}
@@ -44,6 +55,7 @@ export default function AppHeader({ title }: Props) {
             <Text style={styles.headerAvatarText}>{userInitial}</Text>
           </LinearGradient>
         </TouchableOpacity>
+        </View>
       </View>
 
       {/* ── Profile bottom sheet ── */}
@@ -96,11 +108,27 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
   },
+  leftContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 44,
+  },
+  rightContainer: {
+    minWidth: 44,
+    alignItems: "flex-end",
+  },
+  backButton:{
+    marginRight: 12,
+    marginLeft: -4,
+  },
   title: {
     color: "#FFFFFF",
     fontSize: 32,
     fontWeight: "800",
     letterSpacing: -0.5,
+  },
+  titleSmall:{
+    fontSize: 24,
   },
   headerAvatar: {
     width: 40,

@@ -11,8 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GroupsScreen() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function GroupsScreen() {
           {item.members.slice(0, 3).map((member: any, index: number) => (
             <View
               key={member.id}
-              style={[styles.memberAvatar, { left: index * -10 }]}
+              style={[styles.memberAvatar, index > 0 && styles.memberAvatarOverlap]}
             >
               <Text style={styles.memberAvatarText}>
                 {member.name.charAt(0).toUpperCase()}
@@ -45,13 +45,7 @@ export default function GroupsScreen() {
             </View>
           ))}
           {item.members.length > 3 && (
-            <View
-              style={[
-                styles.memberAvatar,
-                styles.overflowAvatar,
-                { left: 3 * -10 },
-              ]}
-            >
+            <View style={[styles.memberAvatar, styles.memberAvatarOverlap, styles.overflowAvatar]}>
               <Text style={styles.memberAvatarText}>
                 +{item.members.length - 3}
               </Text>
@@ -62,7 +56,7 @@ export default function GroupsScreen() {
       <View style={styles.cardFooter}>
         <Text style={styles.footerLabel}>Total Expense</Text>
         <Text style={styles.totalAmount}>
-          ₹{(item.totalExpenses || 0).toFixed(2)}
+          ₹{((item.expenses ?? []).reduce((sum: number, e: { amount: number }) => sum + e.amount, 0)).toFixed(2)}
         </Text>
       </View>
     </TouchableOpacity>
@@ -93,9 +87,11 @@ export default function GroupsScreen() {
           onRefresh={refetch}
           refreshing={loading}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>
-              No groups yet. Create one to get started!
-            </Text>
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people-outline" size={48} color="#3D3D5C" style={{ marginBottom: 12 }} />
+              <Text style={styles.emptyText}>No groups yet.</Text>
+              <Text style={styles.emptySubText}>Tap + to create your first group.</Text>
+            </View>
           }
         />
       )}
@@ -147,9 +143,8 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 16,
     textAlign: "center",
-    marginTop: 40,
   },
-  listContent: { paddingHorizontal: 24, paddingBottom: 100 },
+  listContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 100 },
 
   // ── Card ──────────────────────────────────────────────────────────────────
   card: {
@@ -190,8 +185,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#0E0E1C",
   },
+  memberAvatarOverlap: { marginLeft: -10 },
   overflowAvatar: { backgroundColor: "#3B82F6" },
   memberAvatarText: { color: "#FFFFFF", fontSize: 12, fontWeight: "700" },
+  emptyContainer: { alignItems: "center", marginTop: 60 },
+  emptySubText: { color: "#6B7280", fontSize: 14, marginTop: 4 },
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
