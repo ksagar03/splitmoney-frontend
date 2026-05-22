@@ -11,21 +11,28 @@ interface AuthState {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
-    setAuth:(user:User, token: string) => Promise<void>
+    pendingInviteToken: string | null;
+    setAuth: (user: User, token: string) => Promise<void>;
     logout: () => Promise<void>;
+    setPendingInviteToken: (token: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     token: null,
     isAuthenticated: false,
+    pendingInviteToken: null,
 
     setAuth: async (user, token) => {
-        await AsyncStorage.setItem('@auth_token', token);
-        set({user, token, isAuthenticated: true});
+        await AsyncStorage.multiSet([
+            ['@auth_token', token],
+            ['@auth_user', JSON.stringify(user)],
+        ]);
+        set({ user, token, isAuthenticated: true });
     },
     logout: async () => {
-        await AsyncStorage.removeItem('@auth_token');
-        set({user: null, token: null, isAuthenticated: false});
-    }
+        await AsyncStorage.multiRemove(['@auth_token', '@auth_user']);
+        set({ user: null, token: null, isAuthenticated: false, pendingInviteToken: null });
+    },
+    setPendingInviteToken: (token) => set({ pendingInviteToken: token }),
 }))

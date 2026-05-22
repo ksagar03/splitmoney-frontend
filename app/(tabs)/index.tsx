@@ -1,11 +1,12 @@
 import AppHeader from "@/src/components/AppHeader";
-import { GET_GROUPS } from "@/src/graphql/mutation";
-import { useQuery } from "@apollo/client";
+import { GET_GROUPS, GENERATE_GROUP_INVITE } from "@/src/graphql/mutation";
+import { useQuery, useMutation } from "@apollo/client";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -21,6 +22,21 @@ export default function GroupsScreen() {
     fetchPolicy: "cache-and-network",
   });
 
+  const [generateInvite] = useMutation(GENERATE_GROUP_INVITE);
+
+  const handleInvite = async (groupId: string, groupName: string) => {
+    try {
+      const { data } = await generateInvite({ variables: { groupId } });
+      const token: string = data.generateGroupInvite;
+      await Share.share({
+        message: `Join "${groupName}" on SplitMoney: splitmoneyfrontend://join/${token}`,
+        title: `Join ${groupName}`,
+      });
+    } catch {
+      // Share sheet dismissed or error — no action needed
+    }
+  };
+
   const renderGroupCard = ({ item }: { item: any }) => (
     <TouchableOpacity
       activeOpacity={0.8}
@@ -33,6 +49,13 @@ export default function GroupsScreen() {
         <Text style={styles.groupName} numberOfLines={1}>
           {item.name}
         </Text>
+        <TouchableOpacity
+          style={styles.inviteButton}
+          onPress={() => handleInvite(item.id, item.name)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="share-social-outline" size={18} color="#8B5CF6" />
+        </TouchableOpacity>
         <View style={styles.memberAvatarContainer}>
           {item.members.slice(0, 3).map((member: any, index: number) => (
             <View
@@ -173,6 +196,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     flex: 1,
     paddingRight: 10,
+  },
+  inviteButton: {
+    marginLeft: 8,
+    padding: 4,
   },
   memberAvatarContainer: { flexDirection: "row" },
   memberAvatar: {

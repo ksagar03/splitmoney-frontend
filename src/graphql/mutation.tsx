@@ -42,6 +42,21 @@ export const GET_GROUPS = gql`
   }
 `;
 
+export const GENERATE_GROUP_INVITE = gql`
+  mutation GenerateGroupInvite($groupId: ID!) {
+    generateGroupInvite(groupId: $groupId)
+  }
+`;
+
+export const JOIN_GROUP = gql`
+  mutation JoinGroup($token: String!) {
+    joinGroup(token: $token) {
+      id
+      name
+    }
+  }
+`;
+
 export const GET_USERS = gql`
   query GetUsers {
     users {

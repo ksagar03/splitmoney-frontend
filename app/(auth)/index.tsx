@@ -1,4 +1,4 @@
-import { LOGIN_MUTATION, REGISTER_MUTATION } from "@/src/graphql/mutation";
+import { LOGIN_MUTATION, REGISTER_MUTATION, JOIN_GROUP, GET_GROUPS } from "@/src/graphql/mutation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useMutation } from "@apollo/client";
 import React, { useState, useRef, useEffect } from "react";
@@ -63,9 +63,14 @@ export default function AuthScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const setAuth = useAuthStore((state) => state.setAuth);
+  const pendingInviteToken = useAuthStore((state) => state.pendingInviteToken);
+  const setPendingInviteToken = useAuthStore((state) => state.setPendingInviteToken);
 
   const [loginMutation, { loading: loginLoading }] = useMutation<any>(LOGIN_MUTATION);
   const [registerMutation, { loading: registerLoading }] = useMutation<any>(REGISTER_MUTATION);
+  const [joinGroupMutation] = useMutation(JOIN_GROUP, {
+    refetchQueries: [{ query: GET_GROUPS }],
+  });
   const isLoading = loginLoading || registerLoading;
 
   // ── Animations ──────────────────────────────────────────────────────────────
@@ -162,6 +167,15 @@ export default function AuthScreen() {
       } else {
         const { data: { register } } = await registerMutation({ variables: { name, email, password } });
         await setAuth(register.user, register.token);
+      }
+      // If there's a pending invite from a deep link, join the group now (best-effort)
+      if (pendingInviteToken) {
+        setPendingInviteToken(null);
+        try {
+          await joinGroupMutation({ variables: { token: pendingInviteToken } });
+        } catch {
+          // Silently ignore — user is logged in, group join can be retried
+        }
       }
     } catch (error: any) {
       showError(resolveAuthError(error));

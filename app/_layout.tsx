@@ -13,9 +13,16 @@ function AuthGuard() {
 
   useEffect(() => {
     (async () => {
-      const storedToken = await AsyncStorage.getItem('@auth_token');
+      const [[, storedToken], [, storedUser]] = await AsyncStorage.multiGet([
+        '@auth_token',
+        '@auth_user',
+      ]);
       if (storedToken) {
-        useAuthStore.setState({ token: storedToken, isAuthenticated: true });
+        useAuthStore.setState({
+          token: storedToken,
+          isAuthenticated: true,
+          user: storedUser ? JSON.parse(storedUser) : null,
+        });
       }
       setIsBootstrapping(false);
     })();
@@ -24,9 +31,11 @@ function AuthGuard() {
   useEffect(() => {
     if (isBootstrapping) return;
     const inAuthGroup = segments[0] === '(auth)';
+    const inJoinFlow = segments[0] === 'join';
     // Read current store state directly to avoid race between Zustand + React batching
     const authed = useAuthStore.getState().isAuthenticated;
-    if (!authed && !inAuthGroup) router.replace('/(auth)');
+    // /join handles its own auth — don't redirect away from it
+    if (!authed && !inAuthGroup && !inJoinFlow) router.replace('/(auth)');
     else if (authed && inAuthGroup) router.replace('/(tabs)');
   }, [isAuthenticated, segments, isBootstrapping, router]);
 
