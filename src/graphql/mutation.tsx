@@ -79,3 +79,17 @@ export const CREATE_GROUP = gql`
     }
   }
 `;
+
+export const CREATE_EXPENSE = gql`
+  mutation CreateExpense($input: CreateExpenseInput!) {
+    createExpense(input: $input) {
+      id
+      amount
+      description
+      group {
+        id
+        name
+      }
+    }
+  }
+`;

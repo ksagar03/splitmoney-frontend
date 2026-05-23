@@ -32,10 +32,11 @@ function AuthGuard() {
     if (isBootstrapping) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inJoinFlow = segments[0] === 'join';
+    const inSandbox = segments[0] === 'sandbox';
     // Read current store state directly to avoid race between Zustand + React batching
     const authed = useAuthStore.getState().isAuthenticated;
-    // /join handles its own auth — don't redirect away from it
-    if (!authed && !inAuthGroup && !inJoinFlow) router.replace('/(auth)');
+    // /join and /sandbox bypass auth — don't redirect away from them
+    if (!authed && !inAuthGroup && !inJoinFlow && !inSandbox) router.replace('/(auth)');
     else if (authed && inAuthGroup) router.replace('/(tabs)');
   }, [isAuthenticated, segments, isBootstrapping, router]);
 
