@@ -112,34 +112,98 @@ const GroupDetailsScreen = () => {
     )
 }
 
-const styles = StyleSheet.create( {
-    safeArea:{},
-    blobTopRight:{},
-    centerContainer:{},
-    errorText:{},
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#080812' },
+  blobTopRight: {
+    position: 'absolute',
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: 'rgba(139, 92, 246, 0.07)',
+    top: -80,
+    right: -80,
+  },
+  centerContainer: { flex: 1, justifyContent: 'center', alignContent: 'center' },
+  errorText: { color: '#EF4444', fontSize: 16 },
 
-    summaryContainer:{},
-    summaryCard:{},
-    summaryLabel:{},
-    summaryTotal:{},
-    summaryMembers:{},
+  summaryContainer: { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 24 },
+  summaryCard: {
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
+  },
+  summaryLabel: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  summaryTotal: { color: '#FFFFFF', fontSize: 36, fontWeight: '800', marginBottom: 4 },
+  summaryMembers: { color: '#6B7280', fontSize: 14, fontWeight: '500' },
 
-    listContainer:{},
-    sectionTitle:{},
-    listContent:{},
-    emptyText:{},
+  listContainer: { flex: 1, paddingHorizontal: 24 },
+  sectionTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  listContent: { paddingBottom: 100 },
+  emptyText: { color: '#6B7280', fontSize: 14, textAlign: 'center', marginTop: 32 },
 
-    expenseCard:{},
-    expenseInfo:{},
-    expenseIconWrapper:{},
-    expenseDescription:{},
-    expensePayer:{},
-    expenseAmount:{},
-    amountOwedToYou:{},
+  expenseCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#0E0E1C',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 13,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  expenseInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  expenseIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  expenseDescription: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', marginBottom: 2 },
+  expensePayer: { color: '#9CA3AF', fontSize: 13 },
+  expenseAmount: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  amountOwedToYou: { color: '#10B981' },
 
-    footer:{},
-    buttonWrapper:{},
-    gradientButton:{},
-    buttonText:{}
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingBottom: 36,
+    backgroundColor: 'rgba(8, 8, 18, 0.9)',
+  },
+  buttonWrapper: {
+    borderRadius: 16,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  gradientButton: {
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: { 
+    color: '#FFFFFF', 
+    fontSize: 16, 
+    fontWeight: '700', 
+    letterSpacing: 0.3 
+  }
 })
 export default GroupDetailsScreen

@@ -211,7 +211,7 @@ export default function CreateGroupScreen() {
           <View style={styles.inviteHint}>
             <Ionicons name="information-circle-outline" size={16} color="#6B7280" style={{ marginTop: 1 }} />
             <Text style={styles.inviteHintText}>
-              Friends without the app can still join via an invite link. Share it and they'll be added automatically once they sign up.
+              Friends without the app can still join via an invite link. Share it and they&apos;ll be added automatically once they sign up.
             </Text>
           </View>
 
