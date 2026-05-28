@@ -72,7 +72,7 @@ const GroupDetailsScreen = () => {
                 style={styles.summaryCard}
                 >
                     <Text style={styles.summaryLabel}>Total Group Expenses</Text>
-                    <Text style={styles.summaryTotal}>₹{(group.totalExpenses || 0).toFixed(2)}</Text>
+                    <Text style={styles.summaryTotal}>₹{(group.totalExpense || 0).toFixed(2)}</Text>
                     <Text style={styles.summaryMembers}>{group.members.length} Members</Text>
                 </LinearGradient>
             </View>
