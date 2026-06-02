@@ -1,12 +1,13 @@
 import AppHeader from '@/src/components/AppHeader'
+import { DELETE_EXPENSE } from '@/src/graphql/mutation'
 import { GET_GROUP_DETAILS } from '@/src/graphql/queries'
 import { useAuthStore } from '@/src/store/useAuthStore'
-import { useQuery } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React from 'react'
-import { StyleSheet, View, Text, ActivityIndicator, FlatList, TouchableOpacity, } from 'react-native'
+import { StyleSheet, View, Text, ActivityIndicator, FlatList, TouchableOpacity, Alert, } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 
@@ -20,6 +21,45 @@ const GroupDetailsScreen = () => {
         skip: !id,
         fetchPolicy: 'cache-and-network'
     })
+    const [deleteExpense] = useMutation(DELETE_EXPENSE, {
+      refetchQueries:['GetGroupDetails']
+    })
+    const handleExpenseOptions =(item: any) => {
+      Alert.alert(item.description, 'What do you want to do?', [
+        {
+          text: 'Edit',
+          onPress: () => 
+            router.push({
+            pathname: '/expense/edit-expense' as any,
+            params:{expenseId: item.id, description: item.description, amount: String(item.amount)}
+          })
+        },
+       {
+        text: 'Delete',
+        style: 'destructive',
+        onPress:() => 
+          Alert.alert('Delete Expense', `Delete ${item.description}?`, [
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try{
+                  await deleteExpense({variables:{id: item.id}})
+                }catch (error: any) {
+                  Alert.alert('Error', error.message || 'Could not delete expense. Please try again later.')
+                }
+              },
+            },
+          ]),
+       },
+       {text: 'Cancel', style: 'cancel'}
+      ])
+    }
+
     const group = data?.group
 
     const renderExpenseItem = ({item}: {item: any}) => {
@@ -27,6 +67,7 @@ const GroupDetailsScreen = () => {
         const payerName = isCurrentUserPayer ? 'You' : item.payer.name
 
         return (
+          <TouchableOpacity onLongPress={() => handleExpenseOptions(item)} activeOpacity={0.8}>
             <View style = {styles.expenseCard}>
                 <View style = {styles.expenseInfo}>
                     <View style = {styles.expenseIconWrapper}>
@@ -41,6 +82,7 @@ const GroupDetailsScreen = () => {
                   ₹{item.amount.toFixed(2)}  
                 </Text>
             </View>
+          </TouchableOpacity>
         )
     }
     if(loading && !data){

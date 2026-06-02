@@ -93,3 +93,42 @@ export const CREATE_EXPENSE = gql`
     }
   }
 `;
+
+export const UPDATE_EXPENSE = gql`
+mutation UpdateExpense($id: ID!, $input: UpdateExpenseInput!){
+  UpdateExpense(id: $id, input: $input){
+    id
+    amount
+    description
+    group {
+      id
+      name
+    }
+  }
+}
+`;
+
+export const DELETE_EXPENSE = gql`
+mutation DeleteExpense($id: ID!){
+  DeleteExpense(id: $id)
+}
+`;
+
+export const UPDATE_GROUP = gql`
+mutation UpdateGroup($groupId: ID!, $input: UpdateGroupInput!){
+updateGroup(groupId: $groupId, input: $input){
+  id
+  name
+  members {
+    id
+    name
+  }
+}
+}
+`;
+
+export const DELETE_GROUP = gql`
+mutation DeleteGroup($groupId: ID!){
+  deleteGroup(groupId: $groupId)
+}
+`;
