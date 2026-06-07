@@ -198,6 +198,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     minWidth: 100,
     textAlign: "center",
+    borderRadius:12,
+    padding: 12,
   },
 
   inputGroup: {

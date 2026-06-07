@@ -1,11 +1,14 @@
 import AppHeader from "@/src/components/AppHeader";
-import { GET_GROUPS, GENERATE_GROUP_INVITE } from "@/src/graphql/mutation";
+import { GET_GROUPS, GENERATE_GROUP_INVITE, DELETE_GROUP } from "@/src/graphql/mutation";
 import { useQuery, useMutation } from "@apollo/client";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Platform,
   Share,
   StyleSheet,
   Text,
@@ -23,6 +26,34 @@ export default function GroupsScreen() {
   });
 
   const [generateInvite] = useMutation(GENERATE_GROUP_INVITE);
+  const [deleteGroup] = useMutation(DELETE_GROUP, { refetchQueries: ["GetGroups"] });
+  const handleGroupOptions = (item: any) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    Alert.alert(item.name, "What do you want to do?", [
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          Alert.alert("Delete Group", `Delete "${item.name}"? All expenses will be lost.`, [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Delete",
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  await deleteGroup({ variables: { groupId: item.id } });
+                } catch (err: any) {
+                  Alert.alert("Error", err.message || "Could not delete group.");
+                }
+              },
+            },
+          ]),
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
 
   const handleInvite = async (groupId: string, groupName: string) => {
     try {
@@ -43,6 +74,7 @@ export default function GroupsScreen() {
       onPress={() =>
         router.push({ pathname: "/group/[id]" as any, params: { id: item.id } })
       }
+      onLongPress={() => handleGroupOptions(item)}
       style={styles.card}
     >
       <View style={styles.cardHeader}>
@@ -75,6 +107,22 @@ export default function GroupsScreen() {
             </View>
           )}
         </View>
+        {Platform.OS === "web" && (
+          <TouchableOpacity
+            onPress={async () => {
+              if (!confirm(`Delete "${item.name}"? All expenses will be lost.`)) return;
+              try {
+                await deleteGroup({ variables: { groupId: item.id } });
+              } catch (err: any) {
+                Alert.alert("Error", err.message || "Could not delete group.");
+              }
+            }}
+            style={styles.deleteBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="trash-outline" size={16} color="#EF4444" />
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.cardFooter}>
         <Text style={styles.footerLabel}>Total Expense</Text>
@@ -134,6 +182,7 @@ export default function GroupsScreen() {
           <Ionicons name="add" size={32} color="#FFFFFF" />
         </LinearGradient>
       </TouchableOpacity>
+
     </SafeAreaView>
   );
 }
@@ -248,5 +297,11 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
+  },
+  deleteBtn: {
+    marginLeft: 8,
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
   },
 });

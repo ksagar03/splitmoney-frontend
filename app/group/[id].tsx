@@ -7,7 +7,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React from 'react'
-import { StyleSheet, View, Text, ActivityIndicator, FlatList, TouchableOpacity, Alert, } from 'react-native'
+import * as Haptics from 'expo-haptics'
+import { StyleSheet, View, Text, ActivityIndicator, FlatList, TouchableOpacity, Alert, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 
@@ -15,7 +16,6 @@ const GroupDetailsScreen = () => {
     const {id} = useLocalSearchParams<{id: string}>()
     const router = useRouter()
     const currentUser = useAuthStore(state => state.user)
-
     const {data, loading, error, refetch} = useQuery(GET_GROUP_DETAILS, {
         variables: {id},
         skip: !id,
@@ -24,7 +24,8 @@ const GroupDetailsScreen = () => {
     const [deleteExpense] = useMutation(DELETE_EXPENSE, {
       refetchQueries:['GetGroupDetails']
     })
-    const handleExpenseOptions =(item: any) => {
+    const handleExpenseOptions = (item: any) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       Alert.alert(item.description, 'What do you want to do?', [
         {
           text: 'Edit',
@@ -67,20 +68,53 @@ const GroupDetailsScreen = () => {
         const payerName = isCurrentUserPayer ? 'You' : item.payer.name
 
         return (
-          <TouchableOpacity onLongPress={() => handleExpenseOptions(item)} activeOpacity={0.8}>
-            <View style = {styles.expenseCard}>
-                <View style = {styles.expenseInfo}>
-                    <View style = {styles.expenseIconWrapper}>
+          <TouchableOpacity
+            onLongPress={() => handleExpenseOptions(item)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.expenseCard}>
+                <View style={styles.expenseInfo}>
+                    <View style={styles.expenseIconWrapper}>
                         <Ionicons name='receipt-outline' size={20} color="#8B5CF6"/>
                     </View>
                     <View>
-                      <Text style = {styles.expenseDescription}>{item.description}</Text>
-                      <Text style = {styles.expensePayer}>Paid by {payerName}</Text>
+                      <Text style={styles.expenseDescription}>{item.description}</Text>
+                      <Text style={styles.expensePayer}>Paid by {payerName}</Text>
                     </View>
                 </View>
-                <Text style = {[styles.expenseAmount, isCurrentUserPayer && styles.amountOwedToYou]}>
-                  ₹{item.amount.toFixed(2)}  
-                </Text>
+                <View style={styles.expenseRight}>
+                  <Text style={[styles.expenseAmount, isCurrentUserPayer && styles.amountOwedToYou]}>
+                    ₹{item.amount.toFixed(2)}
+                  </Text>
+                  {Platform.OS === 'web' && (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => router.push({
+                          pathname: '/expense/edit-expense' as any,
+                          params: { expenseId: item.id, description: item.description, amount: String(item.amount) }
+                        })}
+                        style={styles.actionBtn}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="create-outline" size={16} color="#8B5CF6" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          if (!confirm(`Delete "${item.description}"?`)) return
+                          try {
+                            await deleteExpense({ variables: { id: item.id } })
+                          } catch (err: any) {
+                            Alert.alert('Error', err.message || 'Could not delete expense.')
+                          }
+                        }}
+                        style={styles.actionBtn}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
             </View>
           </TouchableOpacity>
         )
@@ -150,6 +184,7 @@ const GroupDetailsScreen = () => {
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
+
         </SafeAreaView>
     )
 }
@@ -214,6 +249,7 @@ const styles = StyleSheet.create({
   },
   expenseDescription: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', marginBottom: 2 },
   expensePayer: { color: '#9CA3AF', fontSize: 13 },
+  expenseRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   expenseAmount: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
   amountOwedToYou: { color: '#10B981' },
 
@@ -241,11 +277,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonText: { 
-    color: '#FFFFFF', 
-    fontSize: 16, 
-    fontWeight: '700', 
-    letterSpacing: 0.3 
-  }
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  actionBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
 })
 export default GroupDetailsScreen

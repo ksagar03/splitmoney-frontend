@@ -65,7 +65,7 @@ export default function EditExpense(){
                     <View style={styles.inputGroup}>
                         <Text style = {styles.label}>For what?</Text>
                         <TextInput
-                        style = {styles.inputGroup}
+                        style = {styles.input}
                          placeholder="e.g. Groceries, Dinner, Taxi..."
                          placeholderTextColor="#3D3D5C"
                          value={description}
@@ -133,6 +133,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     minWidth: 100,
     textAlign: "center",
+    borderRadius:12,
+    padding: 12,
   },
 
   inputGroup: {
