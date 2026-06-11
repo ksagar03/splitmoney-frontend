@@ -1,5 +1,5 @@
 import AppHeader from '@/src/components/AppHeader'
-import { DELETE_EXPENSE } from '@/src/graphql/mutation'
+import { DELETE_EXPENSE, DELETE_GROUP, LEAVE_GROUP } from '@/src/graphql/mutation'
 import { GET_GROUP_DETAILS } from '@/src/graphql/queries'
 import { useAuthStore } from '@/src/store/useAuthStore'
 import { useMutation, useQuery } from '@apollo/client'
@@ -24,8 +24,97 @@ const GroupDetailsScreen = () => {
     const [deleteExpense] = useMutation(DELETE_EXPENSE, {
       refetchQueries:['GetGroupDetails']
     })
+    const [deleteGroup] = useMutation(DELETE_GROUP, {
+      refetchQueries:['GetGroups']
+    })
+    const [leaveGroup] = useMutation(LEAVE_GROUP, {
+      refetchQueries:['GetGroups']
+    })
+    const group = data?.group
+    const isAdmin = group?.createdBy?.id === currentUser?.id
+
+    const canEditExpense = (item: any) => item.payer.id === currentUser?.id || 
+    item.createdBy?.id === currentUser?.id || isAdmin
+
+    const handleGroupMenu = () => {
+      if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+
+        if(isAdmin){
+          Alert.alert(group.name , 'Admin options', [
+            {
+              text: 'Edit Group',
+              onPress: () => router.push({
+                pathname: '/group/edit' as any,
+                params: { groupId: group.id, groupName: group.name }
+              })
+            },
+            {
+              text: 'Delete Group',
+              style: 'destructive',
+              onPress: () => 
+                Alert.alert('Delete Group', `Delete "${group.name}"? All expense will be lost`, [
+                  {
+                    text: 'Cancel',
+                    style: 'cancel'
+                  },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await deleteGroup({ variables: { id: group.id } })
+                      } catch (error: any) {
+                        Alert.alert('Error', error.message || 'Could not delete group. Please try again later.')
+                      }
+                    },
+                  },
+                ])
+            },
+            {text: 'Cancel', style: 'cancel'}
+          ])
+        }else {
+          Alert.alert(group.name, '',[
+            {
+              text: 'Leave Group',
+              style: 'destructive',
+              onPress: () => {
+                Alert.alert('Leave Group', 'You can only leave if your balance is settled',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel'
+                    },
+                    {
+                      text: 'Leave',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await leaveGroup({ variables: { groupId: group.id } })
+                          router.replace('/(tabs)' as any )
+                        } catch (error: any) {
+                          Alert.alert('Error', error.message || 'Could not leave group. Please try again later.')
+                        }
+                      },
+                    },
+                  ]
+                )
+              }
+            },
+            {text: 'Cancel', style: 'cancel'}
+          ])
+        }
+    }
+
+    const menuButton = group ? (
+      <TouchableOpacity onPress={handleGroupMenu} style ={styles.menuButton} hitSlop={{top:8, bottom: 8, left:8, right:8 }} >
+        <Ionicons name ="ellipsis-vertical" size={22} color="#FFFFFF"/>
+      </TouchableOpacity>
+
+    ): undefined
+
     const handleExpenseOptions = (item: any) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      if(!canEditExpense(item)) return
+      if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       Alert.alert(item.description, 'What do you want to do?', [
         {
           text: 'Edit',
@@ -61,15 +150,14 @@ const GroupDetailsScreen = () => {
       ])
     }
 
-    const group = data?.group
-
     const renderExpenseItem = ({item}: {item: any}) => {
         const isCurrentUserPayer = item.payer.id === currentUser?.id
         const payerName = isCurrentUserPayer ? 'You' : item.payer.name
+        const canEdit = canEditExpense(item)
 
         return (
           <TouchableOpacity
-            onLongPress={() => handleExpenseOptions(item)}
+            onLongPress={() => canEdit && handleExpenseOptions(item)}
             activeOpacity={0.8}
           >
             <View style={styles.expenseCard}>
@@ -86,7 +174,7 @@ const GroupDetailsScreen = () => {
                   <Text style={[styles.expenseAmount, isCurrentUserPayer && styles.amountOwedToYou]}>
                     ₹{item.amount.toFixed(2)}
                   </Text>
-                  {Platform.OS === 'web' && (
+                  {Platform.OS === 'web' && canEdit &&  (
                     <>
                       <TouchableOpacity
                         onPress={() => router.push({
@@ -142,7 +230,7 @@ const GroupDetailsScreen = () => {
     return (
         <SafeAreaView style = {styles.safeArea} edges={['top']}>
             <View style={styles.blobTopRight} />
-            <AppHeader title={group.name} showBackButton={true}/>
+            <AppHeader title={group.name} showBackButton rightElement={menuButton}/>
             <View style ={styles.summaryContainer}>
                 <LinearGradient colors={['rgba(139, 92, 246, 0.15)', 'rgba(59, 130, 246, 0.05)']}
                 style={styles.summaryCard}
@@ -202,7 +290,7 @@ const styles = StyleSheet.create({
   },
   centerContainer: { flex: 1, justifyContent: 'center', alignContent: 'center' },
   errorText: { color: '#EF4444', fontSize: 16 },
-
+  menuButton: { padding: 4 },
   summaryContainer: { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 24 },
   summaryCard: {
     borderRadius: 20,

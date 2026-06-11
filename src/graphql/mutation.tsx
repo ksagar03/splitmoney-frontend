@@ -31,6 +31,9 @@ export const GET_GROUPS = gql`
     groups {
       id
       name
+      createdBy { 
+        id 
+        }
       members {
         id
         name
@@ -126,9 +129,18 @@ updateGroup(groupId: $groupId, input: $input){
 }
 }
 `;
-
 export const DELETE_GROUP = gql`
 mutation DeleteGroup($groupId: ID!){
   deleteGroup(groupId: $groupId)
+}
+`;
+export const LEAVE_GROUP = gql`
+mutation LeaveGroup($groupId: ID!){
+  leaveGroup(groupId: $groupId)
+}
+`;
+export const REMOVE_MEMBER = gql`
+mutation RemoveMember($groupId: ID!, $memberId: ID!){
+  removeMember(groupId: $groupId, memberId: $memberId)
 }
 `;

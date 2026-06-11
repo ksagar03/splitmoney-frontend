@@ -15,9 +15,10 @@ import {useRouter} from "expo-router";
 interface Props {
   title: string;
   showBackButton?: boolean;
+  rightElement?: React.ReactNode;
 }
 
-export default function AppHeader({ title, showBackButton }: Props) {
+export default function AppHeader({ title, showBackButton, rightElement }: Props) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [showProfile, setShowProfile] = useState(false);
@@ -42,7 +43,8 @@ export default function AppHeader({ title, showBackButton }: Props) {
         </View>
         <Text style={[styles.title, showBackButton && styles.titleSmall]}>{title}</Text>
         <View style={styles.rightContainer}>
-        <TouchableOpacity
+          {rightElement ?? (
+            <TouchableOpacity
           onPress={() => setShowProfile(true)}
           activeOpacity={0.8}
         >
@@ -52,9 +54,10 @@ export default function AppHeader({ title, showBackButton }: Props) {
             end={{ x: 1, y: 1 }}
             style={styles.headerAvatar}
           >
-            <Text style={styles.headerAvatarText}>{userInitial}</Text>
+             <Text style={styles.headerAvatarText}>{userInitial}</Text>
           </LinearGradient>
         </TouchableOpacity>
+          )}
         </View>
       </View>
 

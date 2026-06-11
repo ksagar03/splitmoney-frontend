@@ -4,6 +4,7 @@ import { ApolloProvider } from "@apollo/client";
 import {Slot, useRouter, useSegments } from "expo-router";
 import {useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import '../global.css'
 
 function AuthGuard() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
