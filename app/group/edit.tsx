@@ -8,8 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, View, Text, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, TextInput, Platform } from "react-native";
-import { FlatList } from "react-native-reanimated/lib/typescript/Animated";
+import { Alert, View, Text, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, TextInput, Platform, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EditGroupScreen() {

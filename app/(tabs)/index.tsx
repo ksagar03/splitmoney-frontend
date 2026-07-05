@@ -1,6 +1,13 @@
 import AppHeader from "@/src/components/AppHeader";
-import { GET_GROUPS, GENERATE_GROUP_INVITE, DELETE_GROUP } from "@/src/graphql/mutation";
-import { useQuery, useMutation } from "@apollo/client";
+import { PressableScale, Screen, listItemEntering } from "@/src/components/ui";
+import { brandGradient, palette } from "@/src/constants/theme";
+import {
+  DELETE_GROUP,
+  GENERATE_GROUP_INVITE,
+  GET_GROUPS,
+} from "@/src/graphql/mutation";
+import { useMutation, useQuery } from "@apollo/client";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -10,13 +17,11 @@ import {
   FlatList,
   Platform,
   Share,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 export default function GroupsScreen() {
   const router = useRouter();
@@ -26,7 +31,9 @@ export default function GroupsScreen() {
   });
 
   const [generateInvite] = useMutation(GENERATE_GROUP_INVITE);
-  const [deleteGroup] = useMutation(DELETE_GROUP, { refetchQueries: ["GetGroups"] });
+  const [deleteGroup] = useMutation(DELETE_GROUP, {
+    refetchQueries: ["GetGroups"],
+  });
   const handleGroupOptions = (item: any) => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -36,20 +43,27 @@ export default function GroupsScreen() {
         text: "Delete",
         style: "destructive",
         onPress: () =>
-          Alert.alert("Delete Group", `Delete "${item.name}"? All expenses will be lost.`, [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Delete",
-              style: "destructive",
-              onPress: async () => {
-                try {
-                  await deleteGroup({ variables: { groupId: item.id } });
-                } catch (err: any) {
-                  Alert.alert("Error", err.message || "Could not delete group.");
-                }
+          Alert.alert(
+            "Delete Group",
+            `Delete "${item.name}"? All expenses will be lost.`,
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Delete",
+                style: "destructive",
+                onPress: async () => {
+                  try {
+                    await deleteGroup({ variables: { groupId: item.id } });
+                  } catch (err: any) {
+                    Alert.alert(
+                      "Error",
+                      err.message || "Could not delete group.",
+                    );
+                  }
+                },
               },
-            },
-          ]),
+            ],
+          ),
       },
       { text: "Cancel", style: "cancel" },
     ]);
@@ -68,240 +82,185 @@ export default function GroupsScreen() {
     }
   };
 
-  const renderGroupCard = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() =>
-        router.push({ pathname: "/group/[id]" as any, params: { id: item.id } })
-      }
-      onLongPress={() => handleGroupOptions(item)}
-      style={styles.card}
-    >
-      <View style={styles.cardHeader}>
-        <Text style={styles.groupName} numberOfLines={1}>
-          {item.name}
-        </Text>
-        <TouchableOpacity
-          style={styles.inviteButton}
-          onPress={() => handleInvite(item.id, item.name)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+  const renderGroupCard = ({ item, index }: { item: any; index: number }) => {
+    const total = (item.expenses ?? []).reduce(
+      (sum: number, e: { amount: number }) => sum + e.amount,
+      0,
+    );
+    const members = item.members ?? [];
+    return (
+      <Animated.View entering={listItemEntering(index)}>
+        <PressableScale
+          onPress={() =>
+            router.push({
+              pathname: "/group/[id]" as any,
+              params: { id: item.id },
+            })
+          }
+          onLongPress={() => handleGroupOptions(item)}
+          className="bg-surface rounded-2.5xl border border-brand/[0.18] p-6 mb-4"
+          style={{
+            shadowColor: palette.brand,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 5,
+          }}
         >
-          <Ionicons name="share-social-outline" size={18} color="#8B5CF6" />
-        </TouchableOpacity>
-        <View style={styles.memberAvatarContainer}>
-          {item.members.slice(0, 3).map((member: any, index: number) => (
-            <View
-              key={member.id}
-              style={[styles.memberAvatar, index > 0 && styles.memberAvatarOverlap]}
+          <View className="flex-row justify-between items-center mb-6">
+            <Text
+              className="text-ink text-xl font-bold tracking-wide flex-1 pr-2.5"
+              numberOfLines={1}
             >
-              <Text style={styles.memberAvatarText}>
-                {member.name.charAt(0).toUpperCase()}
-              </Text>
+              {item.name}
+            </Text>
+            <TouchableOpacity
+              className="ml-2 p-1"
+              onPress={() => handleInvite(item.id, item.name)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 0 }}
+            >
+              <Ionicons
+                name="share-social-outline"
+                size={18}
+                color={palette.brand}
+              />
+            </TouchableOpacity>
+            {/* member avatar */}
+            <View className="flex-row ml-3">
+              {members.slice(0, 3).map((member: any, i: number) => (
+                <View
+                  key={member.id}
+                  className="w-8 h-8 rounded-full bg-avatar justify-center items-center border-2 border-surface"
+                  style={i > 0 ? { marginLeft: -10 } : undefined}
+                >
+                  <Text className="text-ink text-xs font-bold">
+                    {member.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              ))}
+              {members.length > 3 && (
+                <View className="w-8 h-8 rounded-full bg-brand-blue justify-center items-center border-2 border-surface ml-[-10]">
+                  <Text className="Text-ink text-xs font-bold">
+                    +{members.length - 3}
+                  </Text>
+                </View>
+              )}
             </View>
-          ))}
-          {item.members.length > 3 && (
-            <View style={[styles.memberAvatar, styles.memberAvatarOverlap, styles.overflowAvatar]}>
-              <Text style={styles.memberAvatarText}>
-                +{item.members.length - 3}
-              </Text>
-            </View>
-          )}
-        </View>
-        {Platform.OS === "web" && (
-          <TouchableOpacity
-            onPress={async () => {
-              if (!confirm(`Delete "${item.name}"? All expenses will be lost.`)) return;
-              try {
-                await deleteGroup({ variables: { groupId: item.id } });
-              } catch (err: any) {
-                Alert.alert("Error", err.message || "Could not delete group.");
-              }
-            }}
-            style={styles.deleteBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="trash-outline" size={16} color="#EF4444" />
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={styles.cardFooter}>
-        <Text style={styles.footerLabel}>Total Expense</Text>
-        <Text style={styles.totalAmount}>
-          ₹{((item.expenses ?? []).reduce((sum: number, e: { amount: number }) => sum + e.amount, 0)).toFixed(2)}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+            {Platform.OS === "web" && (
+              <TouchableOpacity
+                onPress={async () => {
+                  if (
+                    !confirm(`Delete ${item.name}? All expense will be lost.`)
+                  )
+                    return;
+                  try {
+                    await deleteGroup({ variables: { groupId: item.id } });
+                  } catch (e: any) {
+                    Alert.alert("Error", e.message || "Could not delete group");
+                  }
+                }}
+                className="ml-2 p-1.5 rounded-lg bg-danger/10"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={16}
+                  color={palette.danger}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+          <View className="flex-row justify-between items-end">
+            <Text className="text-ink-muted text-xs font-semibold uppercase tracking-wider">
+              Total Expense
+            </Text>
+            <Text className="text-ink text-2xl font-extrabold">
+              ₹{total.toFixed(2)}
+            </Text>
+          </View>
+        </PressableScale>
+      </Animated.View>
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.blobTopRight} />
-      <View style={styles.blobBottomLeft} />
-
-      <AppHeader title="Your Groups" />
-
+    <Screen>
+      <AppHeader title=" Your Groups" />
       {loading && !data ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#8B5CF6" />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color={palette.brand} />
         </View>
       ) : error ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Failed to load groups.</Text>
+        <View className="flex-1 justify-center items-center">
+          <Text className="text-danger text-base">Failed to load groups.</Text>
         </View>
       ) : (
         <FlatList
           data={data?.groups || []}
           renderItem={renderGroupCard}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingTop: 8,
+            paddingBottom: 100,
+          }}
           showsVerticalScrollIndicator={false}
           onRefresh={refetch}
           refreshing={loading}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="people-outline" size={48} color="#3D3D5C" style={{ marginBottom: 12 }} />
-              <Text style={styles.emptyText}>No groups yet.</Text>
-              <Text style={styles.emptySubText}>Tap + to create your first group.</Text>
-            </View>
+            <Animated.View
+              entering={FadeIn.duration(400)}
+              className="items-center mt-16"
+            >
+              <Ionicons
+                name="people-outline"
+                size={48}
+                color={palette.inkPlaceholder}
+                style={{ marginBottom: 12 }}
+              />
+              <Text className="text-ink-muted text-base text-center">
+                No groups yet.
+              </Text>
+              <Text className="text-ink-faint text-sm mt-1">
+                Tap + to create your first group.
+              </Text>
+            </Animated.View>
           }
         />
       )}
 
       {/* ── FAB ── */}
-      <TouchableOpacity
-        style={styles.fabWrapper}
-        activeOpacity={0.8}
-        onPress={() => router.push({ pathname: "/group/create" as any })}
+      <Animated.View
+        entering={FadeIn.duration(400)}
+        className="absolute bottom-8 right-6"
       >
-        <LinearGradient
-          colors={["#8B5CF6", "#3B82F6"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.fab}
+        <PressableScale
+          onPress={() => router.push({ pathname: "/group/create" as any })}
+          style={{
+            shadowColor: palette.brand,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.4,
+            shadowRadius: 16,
+            elevation: 10,
+          }}
         >
-          <Ionicons name="add" size={32} color="#FFFFFF" />
-        </LinearGradient>
-      </TouchableOpacity>
-
-    </SafeAreaView>
+          <LinearGradient
+            colors={brandGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            // style={{
+            //   width: 64,
+            //   height: 64,
+            //   borderRadius: 32,
+            //   justifyContent: "center",
+            //   alignItems: "center",
+            // }}
+            className="w-16 h-16 rounded-full justify-center items-center"
+          >
+            <Ionicons name="add" size={32} color={palette.ink} />
+          </LinearGradient>
+        </PressableScale>
+      </Animated.View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#080812" },
-  blobTopRight: {
-    position: "absolute",
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    backgroundColor: "rgba(139, 92, 246, 0.07)",
-    top: -80,
-    right: -80,
-  },
-  blobBottomLeft: {
-    position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: "rgba(59, 130, 246, 0.06)",
-    bottom: -60,
-    left: -60,
-  },
-
-  // ── List ──────────────────────────────────────────────────────────────────
-  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  errorText: { color: "#EF4444", fontSize: 16 },
-  emptyText: {
-    color: "#9CA3AF",
-    fontSize: 16,
-    textAlign: "center",
-  },
-  listContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 100 },
-
-  // ── Card ──────────────────────────────────────────────────────────────────
-  card: {
-    backgroundColor: "#0E0E1C",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.18)",
-    padding: 24,
-    marginBottom: 16,
-    shadowColor: "#8B5CF6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  groupName: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-    flex: 1,
-    paddingRight: 10,
-  },
-  inviteButton: {
-    marginLeft: 8,
-    padding: 4,
-  },
-  memberAvatarContainer: { flexDirection: "row" },
-  memberAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#2A2A3C",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#0E0E1C",
-  },
-  memberAvatarOverlap: { marginLeft: -10 },
-  overflowAvatar: { backgroundColor: "#3B82F6" },
-  memberAvatarText: { color: "#FFFFFF", fontSize: 12, fontWeight: "700" },
-  emptyContainer: { alignItems: "center", marginTop: 60 },
-  emptySubText: { color: "#6B7280", fontSize: 14, marginTop: 4 },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
-  footerLabel: {
-    color: "#9CA3AF",
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  totalAmount: { color: "#FFFFFF", fontSize: 24, fontWeight: "800" },
-
-  // ── FAB ───────────────────────────────────────────────────────────────────
-  fabWrapper: {
-    position: "absolute",
-    bottom: 30,
-    right: 24,
-    shadowColor: "#8B5CF6",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  fab: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  deleteBtn: {
-    marginLeft: 8,
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-  },
-});
