@@ -1,31 +1,41 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Single source of truth for SplitMoney's visual identity.
+ *
+ * `palette` mirrors the semantic color tokens defined in `tailwind.config.js`.
+ * Use NativeWind `className` (e.g. `bg-surface`, `text-ink-muted`) in JSX, and
+ * use `palette` / the gradient tuples here for the props that only accept raw
+ * color values — `LinearGradient` colors, Ionicons `color`, `placeholderTextColor`,
+ * `ActivityIndicator` color, etc.
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+export const palette = {
+  background: '#080812',
+  surface: '#0E0E1C',
+  surfaceAlt: '#090915',
+  surfaceFocus: '#0C0C1A',
+  surfaceRaised: '#13132A',
+  avatar: '#2A2A3C',
 
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
-};
+  brand: '#8B5CF6',
+  brandBlue: '#3B82F6',
+
+  ink: '#FFFFFF',
+  inkMuted: '#9CA3AF',
+  inkFaint: '#6B7280',
+  inkPlaceholder: '#3D3D5C',
+
+  success: '#10B981',
+  danger: '#EF4444',
+} as const;
+
+/** Primary purple → blue gradient used on buttons, avatars and the logo. */
+export const brandGradient = ['#8B5CF6', '#3B82F6'] as const;
+/** Dimmed variant shown while a gradient button is in its loading state. */
+export const brandGradientDim = ['#4C3ABA', '#2A4ABA'] as const;
+/** Soft tinted gradient for summary / highlight cards. */
+export const surfaceGradient = ['rgba(139, 92, 246, 0.15)', 'rgba(59, 130, 246, 0.05)'] as const;
 
 export const Fonts = Platform.select({
   ios: {

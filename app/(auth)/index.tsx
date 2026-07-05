@@ -1,23 +1,30 @@
 import { LOGIN_MUTATION, REGISTER_MUTATION, JOIN_GROUP, GET_GROUPS } from "@/src/graphql/mutation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useMutation } from "@apollo/client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import {
-  Animated,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-  StyleSheet,
   ScrollView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  FadeOutUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import SplitMoneyLogo from "@/src/components/SplitMoneyLogo";
+import { Screen, FormField, GradientButton } from "@/src/components/ui";
+import { palette, brandGradient } from "@/src/constants/theme";
 
 /**
  * Maps the structured error from the backend into a user-friendly message.
@@ -28,30 +35,30 @@ import SplitMoneyLogo from "@/src/components/SplitMoneyLogo";
  * 3. Fallback        — show the raw message if it looks human-readable
  */
 function resolveAuthError(error: any): string {
-  // 1. Structured code from backend extensions
   const code: string | undefined = error.graphQLErrors?.[0]?.extensions?.code;
   if (code) {
     switch (code) {
       case "INVALID_CREDENTIALS":       return "Incorrect email or password.";
       case "USER_NOT_FOUND":            return "No account found with that email.";
       case "EMAIL_ALREADY_REGISTERED":  return "An account with this email already exists.";
-      case "SOCIAL_LOGIN_REQUIRED":     return error.graphQLErrors[0].message; // provider-specific, show as-is
+      case "SOCIAL_LOGIN_REQUIRED":     return error.graphQLErrors[0].message;
       case "MISSING_FIELDS":            return "Please fill in all fields.";
       default:                          return error.graphQLErrors[0].message ?? "Something went wrong.";
     }
   }
-
-  // 2. Network-level failure (server down, wrong URL, CORS)
   if (error.networkError) {
     return "Can't reach the server. Check your connection and try again.";
   }
-
-  // 3. Unclassified GraphQL error — show the raw message if present
   const raw: string = error.graphQLErrors?.[0]?.message ?? "";
   if (raw && !raw.toLowerCase().includes("internal")) return raw;
-
   return "Something went wrong. Please try again.";
 }
+
+const BRAND_FEATURES = [
+  "Track group expenses together",
+  "Smart balance calculations",
+  "Instant settle-up suggestions",
+];
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -59,7 +66,6 @@ export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -73,81 +79,17 @@ export default function AuthScreen() {
   });
   const isLoading = loginLoading || registerLoading;
 
-  // ── Animations ──────────────────────────────────────────────────────────────
-
-  // Card entrance
-  const cardAnim = useRef(new Animated.Value(0)).current;
-
-  // Name field expand/collapse (height + opacity)
-  const nameHeightAnim = useRef(new Animated.Value(0)).current;
-  const nameOpacityAnim = useRef(new Animated.Value(0)).current;
-
-  // Button press scale
-  const buttonScale = useRef(new Animated.Value(1)).current;
-
-  // Title fade when toggling mode
-  const titleOpacity = useRef(new Animated.Value(1)).current;
-
-  // Error shake
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-
+  const shakeX = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
   const triggerShake = () => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10,  duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 8,   duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -8,  duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0,   duration: 40, useNativeDriver: true }),
-    ]).start();
+    shakeX.value = withSequence(
+      withTiming(10, { duration: 50 }),
+      withTiming(-10, { duration: 50 }),
+      withTiming(8, { duration: 50 }),
+      withTiming(-8, { duration: 50 }),
+      withTiming(0, { duration: 40 })
+    );
   };
-
-  useEffect(() => {
-    Animated.spring(cardAnim, {
-      toValue: 1,
-      damping: 20,
-      stiffness: 85,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  useEffect(() => {
-    // Fade title out → update → fade back in
-    Animated.timing(titleOpacity, {
-      toValue: 0,
-      duration: 120,
-      useNativeDriver: true,
-    }).start(() => {
-      Animated.timing(titleOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    });
-
-    // Slide name field in/out
-    Animated.parallel([
-      Animated.timing(nameHeightAnim, {
-        toValue: isLogin ? 0 : 1,
-        duration: 280,
-        useNativeDriver: false, // height needs JS driver
-      }),
-      Animated.timing(nameOpacityAnim, {
-        toValue: isLogin ? 0 : 1,
-        duration: 220,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [isLogin]);
-
-  const onButtonPressIn = () => {
-    Animated.spring(buttonScale, { toValue: 0.96, useNativeDriver: true }).start();
-  };
-  const onButtonPressOut = () => {
-    Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
-  };
-
-  // ── Submit ───────────────────────────────────────────────────────────────────
 
   const showError = (msg: string) => {
     setErrorMessage(msg);
@@ -168,7 +110,6 @@ export default function AuthScreen() {
         const { data: { register } } = await registerMutation({ variables: { name, email, password } });
         await setAuth(register.user, register.token);
       }
-      // If there's a pending invite from a deep link, join the group now (best-effort)
       if (pendingInviteToken) {
         setPendingInviteToken(null);
         try {
@@ -182,416 +123,232 @@ export default function AuthScreen() {
     }
   };
 
-  // ── Derived animated styles ──────────────────────────────────────────────────
+  // ── Shared form body (used in both web and mobile layouts) ─────────────────
 
-  const cardStyle = {
-    opacity: cardAnim,
-    transform: [
-      {
-        translateY: cardAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [48, 0],
-        }),
-      },
-      { translateX: shakeAnim },
-    ],
-  };
+  const modeHeader = (
+    <Animated.View key={isLogin ? "login" : "register"} entering={FadeIn.duration(280)}>
+      <View className="items-center mb-7">
+        <Text className="text-ink-faint text-sm font-medium tracking-wide mb-1 uppercase">
+          {isLogin ? "Welcome back" : "Hey there,"}
+        </Text>
+        <Text className="text-ink text-[28px] font-extrabold tracking-tight">
+          {isLogin ? "Sign in" : "Create account"}
+        </Text>
+      </View>
+    </Animated.View>
+  );
 
-  const nameFieldStyle = {
-    maxHeight: nameHeightAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 100],
-    }),
-    opacity: nameOpacityAnim,
-    overflow: "hidden" as const,
-  };
+  const formFields = (
+    <View className="w-full">
+      {!isLogin && (
+        <Animated.View entering={FadeInDown.duration(260)} exiting={FadeOutUp.duration(180)}>
+          <FormField
+            label="Name"
+            placeholder="Enter your name"
+            value={name}
+            onChangeText={(v) => { setName(v); setErrorMessage(null); }}
+            autoCapitalize="words"
+            editable={!isLoading}
+          />
+        </Animated.View>
+      )}
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+      <FormField
+        label="Email"
+        placeholder="Enter your email"
+        value={email}
+        onChangeText={(v) => { setEmail(v); setErrorMessage(null); }}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        editable={!isLoading}
+      />
+
+      <FormField
+        label="Password"
+        placeholder="Enter your password"
+        value={password}
+        onChangeText={(v) => { setPassword(v); setErrorMessage(null); }}
+        secureTextEntry={!showPassword}
+        editable={!isLoading}
+        rightElement={
+          <TouchableOpacity
+            className="px-4 py-3.5"
+            onPress={() => setShowPassword(!showPassword)}
+            disabled={isLoading}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color={palette.brand}
+            />
+          </TouchableOpacity>
+        }
+      />
+
+      {errorMessage && (
+        <Animated.View entering={FadeIn.duration(200)}>
+          <View
+            className="flex-row items-center bg-danger/10 border border-danger/30 rounded-[10px] py-2.5 px-3.5 mb-3"
+            style={{ gap: 8 }}
+          >
+            <Ionicons name="alert-circle" size={16} color="#FCA5A5" />
+            <Text className="text-[#FCA5A5] text-[13px] font-medium flex-1">{errorMessage}</Text>
+          </View>
+        </Animated.View>
+      )}
+
+      <GradientButton
+        label={isLogin ? "Sign in" : "Create account"}
+        onPress={handleSubmit}
+        loading={isLoading}
+        className="mt-2"
+      />
+
+      <View className="my-6 items-center">
+        <View className="w-full h-px bg-white/[0.06]" />
+      </View>
+
+      <View className="flex-row justify-center items-center" style={{ gap: 6 }}>
+        <Text className="text-ink-faint text-sm">
+          {isLogin ? "Don't have an account?" : "Already have an account?"}
+        </Text>
+        <TouchableOpacity
+          onPress={() => { setIsLogin(!isLogin); setErrorMessage(null); }}
+          disabled={isLoading}
+          className="py-0.5 px-1"
+        >
+          <Text className="text-brand text-sm font-bold">
+            {isLogin ? "Register" : "Sign in"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // ── Web: two-column layout ─────────────────────────────────────────────────
+
+  if (Platform.OS === "web") {
+    return (
+      <Screen blobs={false}>
+        <View style={{ flex: 1, flexDirection: "row" }}>
+          {/* Left: brand panel */}
+          <LinearGradient
+            colors={["rgba(139,92,246,0.22)", "rgba(59,130,246,0.12)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 64,
+              borderRightWidth: 1,
+              borderRightColor: "rgba(139,92,246,0.2)",
+            }}
+          >
+            <SplitMoneyLogo size={88} bgColor={palette.background} />
+
+            <Text
+              style={{
+                color: palette.ink,
+                fontSize: 44,
+                fontWeight: "800",
+                letterSpacing: -0.5,
+                marginTop: 28,
+                marginBottom: 10,
+              }}
+            >
+              SplitMoney
+            </Text>
+            <Text
+              style={{
+                color: palette.inkMuted,
+                fontSize: 17,
+                textAlign: "center",
+                marginBottom: 40,
+                maxWidth: 300,
+                lineHeight: 26,
+              }}
+            >
+              Split expenses, stay balanced, no awkward IOUs.
+            </Text>
+
+            {BRAND_FEATURES.map((f) => (
+              <View key={f} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <LinearGradient
+                  colors={brandGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{ width: 8, height: 8, borderRadius: 4 }}
+                />
+                <Text style={{ color: palette.inkMuted, fontSize: 15 }}>{f}</Text>
+              </View>
+            ))}
+          </LinearGradient>
+
+          {/* Right: form panel */}
+          <ScrollView
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 64,
+              backgroundColor: palette.surface,
+            }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Animated.View style={[shakeStyle, { width: "100%", maxWidth: 400 }]}>
+              {modeHeader}
+              {formFields}
+            </Animated.View>
+          </ScrollView>
+        </View>
+      </Screen>
+    );
+  }
+
+  // ── Mobile: centered card layout ───────────────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Background gradient blobs */}
-      <View style={styles.blobTopRight} />
-      <View style={styles.blobBottomLeft} />
-
+    <Screen edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+        className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingVertical: 40,
+            paddingHorizontal: 20,
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Card ── */}
-          <Animated.View style={[styles.card, cardStyle]}>
-
-            {/* Logo */}
-            <View style={styles.logoWrapper}>
-              <SplitMoneyLogo size={64} bgColor="#0E0E1C" />
+          <Animated.View
+            entering={FadeInUp.duration(500).springify().damping(18)}
+            className="w-full max-w-[440px]"
+          >
+          <Animated.View
+            style={[shakeStyle, {
+              shadowColor: palette.brand,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.12,
+              shadowRadius: 40,
+              elevation: 12,
+            }]}
+            className="bg-surface rounded-3xl border border-brand/20 px-8 py-9"
+          >
+            <View className="items-center mb-6 pt-2 px-2">
+              <SplitMoneyLogo size={64} bgColor={palette.surface} />
             </View>
-
-            {/* Header */}
-            <Animated.View style={[styles.header, { opacity: titleOpacity }]}>
-              <Text style={styles.greeting}>
-                {isLogin ? "Welcome back" : "Hey there,"}
-              </Text>
-              <Text style={styles.title}>
-                {isLogin ? "Sign in" : "Create account"}
-              </Text>
-            </Animated.View>
-
-            {/* Form */}
-            <View style={styles.form}>
-
-              {/* Name field — animated */}
-              <Animated.View style={nameFieldStyle} pointerEvents={isLogin ? "none" : "auto"}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Name</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      focusedField === "name" && styles.inputFocused,
-                    ]}
-                    placeholder="Enter your name"
-                    placeholderTextColor="#3D3D5C"
-                    value={name}
-                    onChangeText={(v) => { setName(v); setErrorMessage(null); }}
-                    autoCapitalize="words"
-                    editable={!isLoading}
-                    onFocus={() => setFocusedField("name")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </View>
-              </Animated.View>
-
-              {/* Email */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    focusedField === "email" && styles.inputFocused,
-                  ]}
-                  placeholder="Enter your email"
-                  placeholderTextColor="#3D3D5C"
-                  value={email}
-                  onChangeText={(v) => { setEmail(v); setErrorMessage(null); }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  editable={!isLoading}
-                  onFocus={() => setFocusedField("email")}
-                  onBlur={() => setFocusedField(null)}
-                />
-              </View>
-
-              {/* Password */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
-                <View
-                  style={[
-                    styles.passwordContainer,
-                    focusedField === "password" && styles.inputFocused,
-                  ]}
-                >
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Enter your password"
-                    placeholderTextColor="#3D3D5C"
-                    value={password}
-                    onChangeText={(v) => { setPassword(v); setErrorMessage(null); }}
-                    secureTextEntry={!showPassword}
-                    editable={!isLoading}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeButton}
-                    onPress={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={20}
-                      color={ACCENT}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Inline error banner */}
-              {errorMessage && (
-                <View style={styles.errorBanner}>
-                  <Text style={styles.errorBannerText}>{errorMessage}</Text>
-                </View>
-              )}
-
-              {/* Submit button */}
-              <Animated.View style={[styles.buttonWrapper, { transform: [{ scale: buttonScale }] }]}>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleSubmit}
-                  onPressIn={onButtonPressIn}
-                  onPressOut={onButtonPressOut}
-                  disabled={isLoading}
-                >
-                  <LinearGradient
-                    colors={isLoading ? ["#4C3A8A", "#2A4A8A"] : ["#8B5CF6", "#3B82F6"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.gradientButton}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator color="rgba(255,255,255,0.7)" />
-                    ) : (
-                      <Text style={styles.buttonText}>
-                        {isLogin ? "Sign in" : "Create account"}
-                      </Text>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Footer toggle */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                {isLogin ? "Don't have an account?" : "Already have an account?"}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setIsLogin(!isLogin)}
-                disabled={isLoading}
-                style={styles.footerLinkWrapper}
-              >
-                <Text style={styles.footerLink}>
-                  {isLogin ? "Register" : "Sign in"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
+            {modeHeader}
+            {formFields}
+          </Animated.View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
-
-// ── Styles ────────────────────────────────────────────────────────────────────
-
-const CARD_MAX_WIDTH = 440;
-const ACCENT = "#8B5CF6";
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#080812",
-  },
-
-  // Decorative background blobs (soft glow circles)
-  blobTopRight: {
-    position: "absolute",
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    backgroundColor: "rgba(139, 92, 246, 0.07)",
-    top: -80,
-    right: -80,
-  },
-  blobBottomLeft: {
-    position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: "rgba(59, 130, 246, 0.06)",
-    bottom: -60,
-    left: -60,
-  },
-
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-
-  // ── Card ────────────────────────────────────────────────────────────────────
-  card: {
-    width: "100%",
-    maxWidth: CARD_MAX_WIDTH,
-    backgroundColor: "#0E0E1C",
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.18)",
-    paddingHorizontal: 32,
-    paddingVertical: 36,
-    // Glow
-    shadowColor: ACCENT,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 40,
-    elevation: 12,
-  },
-
-  // ── Logo ────────────────────────────────────────────────────────────────────
-  logoWrapper: {
-    alignItems: "center",
-    marginBottom: 24,
-    paddingTop: 8,   // breathing room for the glow ring
-    paddingHorizontal: 8,
-  },
-  // ── Header ──────────────────────────────────────────────────────────────────
-  header: {
-    alignItems: "center",
-    marginBottom: 28,
-  },
-  greeting: {
-    color: "#6B7280",
-    fontSize: 14,
-    fontWeight: "500",
-    letterSpacing: 0.4,
-    marginBottom: 4,
-    textTransform: "uppercase",
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-
-  // ── Form ────────────────────────────────────────────────────────────────────
-  form: {
-    width: "100%",
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    color: "#9CA3AF",
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    marginBottom: 8,
-    marginLeft: 2,
-  },
-  input: {
-    backgroundColor: "#090915",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    color: "#FFFFFF",
-    fontSize: 15,
-  },
-  inputFocused: {
-    borderColor: "rgba(139, 92, 246, 0.6)",
-    backgroundColor: "#0C0C1A",
-  },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#090915",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    borderRadius: 12,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    color: "#FFFFFF",
-    fontSize: 15,
-  },
-  eyeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  eyeIcon: {
-    // eyeButton already handles padding; this is a placeholder kept for override
-  },
-
-  // ── Error banner ────────────────────────────────────────────────────────────
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 12,
-  },
-  errorBannerText: {
-    color: "#FCA5A5",
-    fontSize: 13,
-    fontWeight: "500",
-    flex: 1,
-  },
-
-  // ── Button ──────────────────────────────────────────────────────────────────
-  buttonWrapper: {
-    marginTop: 8,
-    borderRadius: 12,
-    shadowColor: ACCENT,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  gradientButton: {
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-
-  // ── Divider ─────────────────────────────────────────────────────────────────
-  divider: {
-    marginVertical: 24,
-    alignItems: "center",
-  },
-  dividerLine: {
-    width: "100%",
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-
-  // ── Footer ──────────────────────────────────────────────────────────────────
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-  },
-  footerText: {
-    color: "#6B7280",
-    fontSize: 14,
-  },
-  footerLinkWrapper: {
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-  },
-  footerLink: {
-    color: ACCENT,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-});
