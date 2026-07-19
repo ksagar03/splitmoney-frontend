@@ -1,10 +1,12 @@
-import { JOIN_GROUP, GET_GROUPS } from "@/src/graphql/mutation";
+import { Screen, contentEntering } from "@/src/components/ui";
+import { palette } from "@/src/constants/theme";
+import { GET_GROUPS, JOIN_GROUP } from "@/src/graphql/mutation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useMutation } from "@apollo/client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, Text } from "react-native";
+import Animated from "react-native-reanimated";
 
 export default function JoinGroupScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -34,17 +36,14 @@ export default function JoinGroupScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.inner}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-        <Text style={styles.text}>Joining group…</Text>
-      </View>
-    </SafeAreaView>
+    <Screen>
+      <Animated.View
+        entering={contentEntering()}
+        className="flex-1 justify-center items-center gap-4 "
+      >
+        <ActivityIndicator size="large" color={palette.brand} />
+        <Text className="text-ink-muted text-base">Joining group…</Text>
+      </Animated.View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#080812" },
-  inner: { flex: 1, justifyContent: "center", alignItems: "center", gap: 16 },
-  text: { color: "#9CA3AF", fontSize: 16 },
-});
