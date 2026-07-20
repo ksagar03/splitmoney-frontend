@@ -14,24 +14,54 @@ export const GET_GROUP_MEMBERS = gql`
   }
 `;
 export const GET_GROUP_DETAILS = gql`
-query GetGroupDetails($id: ID!){
-    group(id: $id){
+  query GetGroupDetails($id: ID!) {
+    group(id: $id) {
+      id
+      name
+      totalExpense
+      createdBy {
         id
-        name 
-        totalExpense
-        members{
-            id
-            name
+      }
+      members {
+        id
+        name
+      }
+      expenses {
+        id
+        description
+        amount
+        payer {
+          id
+          name
         }
-        expenses{
-            id
-            description
-            amount
-            payer {
-                id
-                name
-            }
-            createdAt
+        createdBy {
+          id
         }
+        createdAt
+      }
     }
-}`
+  }
+`;
+
+export const GET_GROUP_BALANCE = gql`
+  query GetGroupBalance($groupId: ID!) {
+    getGroupBalance(groupId: $groupId) {
+      user {
+        id
+        name
+      }
+      amount
+      settlements {
+        from {
+          id
+          name
+        }
+        to {
+          id
+          name
+        }
+        amount
+      }
+    }
+  }
+`;

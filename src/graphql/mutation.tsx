@@ -31,9 +31,9 @@ export const GET_GROUPS = gql`
     groups {
       id
       name
-      createdBy { 
-        id 
-        }
+      createdBy {
+        id
+      }
       members {
         id
         name
@@ -98,49 +98,49 @@ export const CREATE_EXPENSE = gql`
 `;
 
 export const UPDATE_EXPENSE = gql`
-mutation UpdateExpense($id: ID!, $input: UpdateExpenseInput!){
-  UpdateExpense(id: $id, input: $input){
-    id
-    amount
-    description
-    group {
+  mutation UpdateExpense($id: ID!, $input: UpdateExpenseInput!) {
+    updateExpense(id: $id, input: $input) {
       id
-      name
+      amount
+      description
+      group {
+        id
+        name
+      }
     }
   }
-}
 `;
 
 export const DELETE_EXPENSE = gql`
-mutation DeleteExpense($id: ID!){
-  DeleteExpense(id: $id)
-}
+  mutation DeleteExpense($id: ID!) {
+    deleteExpense(id: $id)
+  }
 `;
 
 export const UPDATE_GROUP = gql`
-mutation UpdateGroup($groupId: ID!, $input: UpdateGroupInput!){
-updateGroup(groupId: $groupId, input: $input){
-  id
-  name
-  members {
-    id
-    name
+  mutation UpdateGroup($groupId: ID!, $input: UpdateGroupInput!) {
+    updateGroup(groupId: $groupId, input: $input) {
+      id
+      name
+      members {
+        id
+        name
+      }
+    }
   }
-}
-}
 `;
 export const DELETE_GROUP = gql`
-mutation DeleteGroup($groupId: ID!){
-  deleteGroup(groupId: $groupId)
-}
+  mutation DeleteGroup($groupId: ID!) {
+    deleteGroup(groupId: $groupId)
+  }
 `;
 export const LEAVE_GROUP = gql`
-mutation LeaveGroup($groupId: ID!){
-  leaveGroup(groupId: $groupId)
-}
+  mutation LeaveGroup($groupId: ID!) {
+    leaveGroup(groupId: $groupId)
+  }
 `;
 export const REMOVE_MEMBER = gql`
-mutation RemoveMember($groupId: ID!, $memberId: ID!){
-  removeMember(groupId: $groupId, memberId: $memberId)
-}
+  mutation RemoveMember($groupId: ID!, $memberId: ID!) {
+    removeMember(groupId: $groupId, memberId: $memberId)
+  }
 `;
