@@ -17,7 +17,7 @@ function getGraphQLUri(): string {
   const hostUri = Constants.expoConfig?.hostUri;
   if (hostUri) {
     const host = hostUri.split(":")[0];
-    return `http://${host}:8080/grapgql`;
+    return `http://${host}:8080/graphql`;
   }
   if (Platform.OS === "android") {
     return "http://10.0.2.2:8080/graphql";

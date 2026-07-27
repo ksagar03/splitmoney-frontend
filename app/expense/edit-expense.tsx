@@ -24,11 +24,11 @@ import { Alert } from "react-native/Libraries/Alert/Alert";
 export default function EditExpense() {
   const router = useRouter();
   const {
-    expenseID,
+    expenseId,
     description: initialDescription,
     amount: initialAmount,
   } = useLocalSearchParams<{
-    expenseID: string;
+    expenseId: string;
     description: string;
     amount: string;
   }>();
@@ -50,7 +50,7 @@ export default function EditExpense() {
     try {
       await updateExpense({
         variables: {
-          id: expenseID,
+          id: expenseId,
           input: {
             description,
             amount: parsedAmount,

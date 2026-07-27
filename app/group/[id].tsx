@@ -191,7 +191,7 @@ const GroupDetailsScreen = () => {
               style: "destructive",
               onPress: async () => {
                 try {
-                  await deleteExpense({ variables: { id: item.id } });
+                  await deleteExpense({ variables: { groupId: item.id } });
                 } catch (error: any) {
                   Alert.alert(
                     "Error",
@@ -388,3 +388,4 @@ const GroupDetailsScreen = () => {
     </Screen>
   );
 };
+export default GroupDetailsScreen

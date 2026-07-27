@@ -80,7 +80,6 @@ export default function CreateGroupScreen() {
           input: {
             name: groupName,
             membersId: allMemberIds,
-            createdBy: currentUser.id,
           },
         },
       });

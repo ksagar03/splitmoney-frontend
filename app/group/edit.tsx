@@ -77,7 +77,7 @@ export default function EditGroupScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await removeMember({ variables: { groupId, userId: member.id } });
+              await removeMember({ variables: { groupId, memberId: member.id } });
             } catch (err: any) {
               Alert.alert("Error", err.message || "Could not remove member.");
             }
