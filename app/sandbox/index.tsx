@@ -10,6 +10,7 @@ const SCREENS: { name: string; route: string; description?: string }[] = [
   { name: "Playground", route: "/sandbox/playground", description: "Scratch area" },
   // Add more entries as you create new screens:
   // { name: "New Expense Form", route: "/sandbox/new-expense-form" },
+  {name: "Action Sheet", route: "/sandbox/ActionSheet", description: "Bottom sheet with actions"},
 ];
 
 export default function SandboxIndex() {
