@@ -32,7 +32,6 @@ export function PressableScale({
   return (
     <Animated.View
       style={[animatedStyle, style as ViewStyle]}
-      className={className}
     >
       <Pressable
         onPress={onPress}
@@ -44,7 +43,7 @@ export function PressableScale({
           scale.value = withSpring(1, { damping: 15, stiffness: 400 });
         }}
         disabled={disabled}
-        style={{ flex: 1 }}
+        className={className}
       >
         {children}
       </Pressable>

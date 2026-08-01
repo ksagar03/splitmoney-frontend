@@ -232,29 +232,24 @@ export default function GroupsScreen() {
       {/* ── FAB ── */}
       <Animated.View
         entering={FadeIn.duration(400)}
-        className="absolute bottom-8 right-6"
+        style = {{ position:"absolute", bottom:32, right: 24, }}
       >
         <PressableScale
           onPress={() => router.push({ pathname: "/group/create" as any })}
           style={{
             shadowColor: palette.brand,
-            shadowOffset: { width: 0, height: 8 },
+            shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.4,
             shadowRadius: 16,
             elevation: 10,
+            borderRadius: 32,
+            backgroundColor: "transparent",
           }}
         >
           <LinearGradient
             colors={brandGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            // style={{
-            //   width: 64,
-            //   height: 64,
-            //   borderRadius: 32,
-            //   justifyContent: "center",
-            //   alignItems: "center",
-            // }}
             className="w-16 h-16 rounded-full justify-center items-center"
           >
             <Ionicons name="add" size={32} color={palette.ink} />
