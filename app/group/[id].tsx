@@ -4,6 +4,7 @@ import {
   PressableScale,
   Screen,
   listItemEntering,
+  ActionSheet, ActionSheetOptions, ConfirmDialog
 } from "@/src/components/ui";
 import { palette, surfaceGradient } from "@/src/constants/theme";
 import {
@@ -18,7 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, {useState} from  "react";
 import {
   ActivityIndicator,
   Alert,
@@ -34,6 +35,13 @@ const GroupDetailsScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const currentUser = useAuthStore((state) => state.user);
+  const [groupMenuVisible, setGroupMenuVisible] = useState(false);
+  const [expenseMenuVisible, setExpenseMenuVisible] = useState<any>(null);
+  type pendingConfirm = |{ type:"deleteExpense"; expense:any} | {type: "deleteGroup" }|{type: "leaveGroup" } | null;
+  const [pendingConfirmation, setPendingConfirmation] = useState<pendingConfirm>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+
   const { data, loading, error, refetch } = useQuery(GET_GROUP_DETAILS, {
     variables: { id },
     skip: !id,
@@ -68,87 +76,31 @@ const GroupDetailsScreen = () => {
   const handleGroupMenu = () => {
     if (Platform.OS !== "web")
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    if (isAdmin) {
-      Alert.alert(group.name, "Admin options", [
-        {
-          text: "Edit Group",
-          onPress: () =>
-            router.push({
-              pathname: "/group/edit" as any,
-              params: { groupId: group.id, groupName: group.name },
-            }),
-        },
-        {
-          text: "Delete Group",
-          style: "destructive",
-          onPress: () =>
-            Alert.alert(
-              "Delete Group",
-              `Delete "${group.name}"? All expense will be lost`,
-              [
-                {
-                  text: "Cancel",
-                  style: "cancel",
-                },
-                {
-                  text: "Delete",
-                  style: "destructive",
-                  onPress: async () => {
-                    try {
-                      await deleteGroup({ variables: { id: group.id } });
-                    } catch (error: any) {
-                      Alert.alert(
-                        "Error",
-                        error.message ||
-                          "Could not delete group. Please try again later.",
-                      );
-                    }
-                  },
-                },
-              ],
-            ),
-        },
-        { text: "Cancel", style: "cancel" },
-      ]);
-    } else {
-      Alert.alert(group.name, "", [
-        {
-          text: "Leave Group",
-          style: "destructive",
-          onPress: () => {
-            Alert.alert(
-              "Leave Group",
-              "You can only leave if your balance is settled",
-              [
-                {
-                  text: "Cancel",
-                  style: "cancel",
-                },
-                {
-                  text: "Leave",
-                  style: "destructive",
-                  onPress: async () => {
-                    try {
-                      await leaveGroup({ variables: { groupId: group.id } });
-                      router.replace("/(tabs)" as any);
-                    } catch (error: any) {
-                      Alert.alert(
-                        "Error",
-                        error.message ||
-                          "Could not leave group. Please try again later.",
-                      );
-                    }
-                  },
-                },
-              ],
-            );
-          },
-        },
-        { text: "Cancel", style: "cancel" },
-      ]);
-    }
-  };
+  }
+    const groupMenuOptions: ActionSheetOptions[] = isAdmin ? 
+    [
+      {label: "Edit Group",
+        icon: "create-outline",
+        onPress: () =>
+          router.push({
+            pathname: "/group/edit" as any,
+            params: { groupId: group.id, groupName: group.name },
+          })
+      },
+      {
+        label: "Delete Group",
+        icon: "trash-outline",
+        destructive: true,
+        onPress: () => setPendingConfirmation({type: "deleteGroup"})
+      }
+    ]:[
+      {
+         label: "Leave Group",
+         icon: "exit-outline",
+         destructive: true,
+         onPress: () => setPendingConfirmation({type: "leaveGroup"})
+      }
+    ]
 
   const menuButton = group ? (
     <TouchableOpacity
@@ -164,48 +116,74 @@ const GroupDetailsScreen = () => {
     if (!canEditExpense(item)) return;
     if (Platform.OS !== "web")
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(item.description, "What do you want to do?", [
-      {
-        text: "Edit",
-        onPress: () =>
-          router.push({
-            pathname: "/expense/edit-expense" as any,
-            params: {
-              expenseId: item.id,
-              description: item.description,
-              amount: String(item.amount),
-            },
-          }),
-      },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () =>
-          Alert.alert("Delete Expense", `Delete ${item.description}?`, [
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-            {
-              text: "Delete",
-              style: "destructive",
-              onPress: async () => {
-                try {
-                  await deleteExpense({ variables: { groupId: item.id } });
-                } catch (error: any) {
-                  Alert.alert(
-                    "Error",
-                    error.message ||
-                      "Could not delete expense. Please try again later.",
-                  );
-                }
-              },
-            },
-          ]),
-      },
-      { text: "Cancel", style: "cancel" },
-    ]);
+    setExpenseMenuVisible(item);
   };
+  const expenseMenuOptions: ActionSheetOptions[] = expenseMenuVisible ? [
+    {
+      label: "Edit ",
+      icon: "create-outline",
+      onPress: () => 
+        router.push({
+          pathname: "/expense/edit-expense" as any,
+          params: {
+            expenseId: expenseMenuVisible.id,
+            description: expenseMenuVisible.description,
+            amount: String(expenseMenuVisible.amount),
+          }
+        })
+    },
+    {
+      label: "Delete",
+      icon: "trash-outline",
+      destructive: true,
+      onPress: () => setPendingConfirmation({type: "deleteExpense", expense: expenseMenuVisible}) }    
+  ] : []
+
+  const confirmMeta = (() => {
+    switch (pendingConfirmation?.type) {
+      case "deleteGroup":
+        return {
+          title: "Delete Group",
+          message: `Are you sure you want to delete this group:${group.name}? This action cannot be undone.`,
+          confirmLabel: "Delete",
+        }
+      case "leaveGroup":
+        return {
+          title: "Leave Group",
+          message: `Are you sure you want to leave this group:${group.name}? You will no longer have access to this group.
+          note:You can only leave if your balance is settled.`,
+          confirmLabel: "Leave",
+        }
+        case "deleteExpense": 
+        return {
+          title: "Delete Expense",
+          message: `Delete "${pendingConfirmation.expense.description}"?`,
+          confirmLabel: "Delete",
+        }
+        default:
+          return { title: "", message: "", confirmLabel: "" }
+    }
+  })();
+  const handleConfirmAction = async () => {
+    if (!pendingConfirmation) return;
+    setConfirmLoading(true);
+    try{
+      if(pendingConfirmation.type === "deleteGroup"){
+        await deleteGroup({variables: {id: group.id}});
+      }else if(pendingConfirmation.type === "leaveGroup"){
+        await leaveGroup({variables: {id: group.id}});
+        router.replace("/(tabs)" as any);
+      }else if(pendingConfirmation.type === "deleteExpense"){
+        await deleteExpense({variables: {id: pendingConfirmation.expense.id}});
+      }
+      setPendingConfirmation(null);
+    }catch(err:any){
+      setPendingConfirmation(null);
+      Alert.alert("Error", err.message || "Could not complete action");
+    }finally{
+      setConfirmLoading(false);
+    }
+  }
 
   const renderExpenseItem = ({ item, index }: { item: any; index: number }) => {
     const isCurrentUserPayer = item.payer.id === currentUser?.id;
@@ -270,17 +248,9 @@ const GroupDetailsScreen = () => {
                   />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={async () => {
-                    if (!confirm(`Delete "${item.description}"?`)) return;
-                    try {
-                      await deleteExpense({ variables: { id: item.id } });
-                    } catch (err: any) {
-                      Alert.alert(
-                        "Error",
-                        err.message || "Could not delete expense",
-                      );
-                    }
-                  }}
+                  onPress={() => 
+                    setPendingConfirmation({type: "deleteExpense", expense: item})
+                  }
                   className="p-1.5 rounded-lg bg-white/5"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
@@ -385,6 +355,27 @@ const GroupDetailsScreen = () => {
           }
         />
       </View>
+      <ActionSheet
+      visible={groupMenuVisible}
+      title={group.name}
+      options={groupMenuOptions}
+      onCancel={() => setGroupMenuVisible(false)}
+      />
+      <ActionSheet
+      visible={!!expenseMenuVisible}
+      title={expenseMenuVisible?.description}
+      options={expenseMenuOptions}
+      onCancel={() => setExpenseMenuVisible(null)}
+      />
+      <ConfirmDialog
+      visible={!!pendingConfirmation}
+      title={confirmMeta.title}
+      message={confirmMeta?.message}
+      confirmLabel={confirmMeta?.confirmLabel}
+      destructive
+      onConfirm={handleConfirmAction}
+      onCancel={() => setPendingConfirmation(null)}
+      />
     </Screen>
   );
 };

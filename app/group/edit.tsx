@@ -1,6 +1,7 @@
 import AppHeader from "@/src/components/AppHeader";
 import {
   Avatar,
+  ConfirmDialog,
   FormField,
   GradientButton,
   Screen,
@@ -34,6 +35,10 @@ export default function EditGroupScreen() {
   const router = useRouter();
   const currentUser = useAuthStore((state) => state.user);
   const [name, setName] = useState(initialName || "");
+  const [confirmRemoveMember, setConfirmRemoveMember] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const { data, loading: groupLoading } = useQuery(GET_GROUP_DETAILS, {
     variables: { id: groupId },
     skip: !groupId,
@@ -67,24 +72,18 @@ export default function EditGroupScreen() {
     }
   };
   const handleRemoveMember = (member: { id: string; name: string }) => {
-    Alert.alert(
-      `Remove ${member.name}?`,
-      "This will only work if their balance is fully settled.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await removeMember({ variables: { groupId, memberId: member.id } });
-            } catch (err: any) {
-              Alert.alert("Error", err.message || "Could not remove member.");
-            }
-          },
-        },
-      ],
-    );
+    setConfirmRemoveMember(member);
+  };
+  const handleConfirmRemoveMember = async () => {
+    if (!confirmRemoveMember) return;
+    try {
+      await removeMember({
+        variables: { groupId, memberId: confirmRemoveMember.id },
+      });
+      setConfirmRemoveMember(null);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not remove member.");
+    }
   };
 
   const renderMember = ({
@@ -193,6 +192,15 @@ export default function EditGroupScreen() {
           />
         </View>
       </KeyboardAvoidingView>
+      <ConfirmDialog
+        visible={!!confirmRemoveMember}
+        title={`Remove ${confirmRemoveMember?.name ?? ""}?`}
+        message="This will only work if their balance is fully settled."
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmRemoveMember}
+        onCancel={() => setConfirmRemoveMember(null)}
+      />
     </Screen>
   );
 }

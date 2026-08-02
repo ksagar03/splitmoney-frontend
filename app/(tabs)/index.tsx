@@ -1,5 +1,12 @@
 import AppHeader from "@/src/components/AppHeader";
-import { PressableScale, Screen, listItemEntering } from "@/src/components/ui";
+import {
+  ActionSheet,
+  ActionSheetOptions,
+  ConfirmDialog,
+  PressableScale,
+  Screen,
+  listItemEntering,
+} from "@/src/components/ui";
 import { brandGradient, palette } from "@/src/constants/theme";
 import {
   DELETE_GROUP,
@@ -11,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +33,9 @@ import Animated, { FadeIn } from "react-native-reanimated";
 
 export default function GroupsScreen() {
   const router = useRouter();
+  const [menuTartget, setMenuTarget] = useState<any>(null);
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data, loading, error, refetch } = useQuery(GET_GROUPS, {
     fetchPolicy: "cache-and-network",
@@ -38,35 +49,32 @@ export default function GroupsScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    Alert.alert(item.name, "What do you want to do?", [
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () =>
-          Alert.alert(
-            "Delete Group",
-            `Delete "${item.name}"? All expenses will be lost.`,
-            [
-              { text: "Cancel", style: "cancel" },
-              {
-                text: "Delete",
-                style: "destructive",
-                onPress: async () => {
-                  try {
-                    await deleteGroup({ variables: { groupId: item.id } });
-                  } catch (err: any) {
-                    Alert.alert(
-                      "Error",
-                      err.message || "Could not delete group.",
-                    );
-                  }
-                },
-              },
-            ],
-          ),
-      },
-      { text: "Cancel", style: "cancel" },
-    ]);
+    setMenuTarget(item);
+  };
+
+  const groupOPtionsMenu: ActionSheetOptions[] = [
+    {
+      label: "Delete",
+      icon: "trash-outline",
+      destructive: true,
+      onPress: () => setConfirmDeleteTarget(menuTartget),
+    },
+  ];
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteGroup({
+        variables: { groupId: confirmDeleteTarget.id },
+      });
+      setConfirmDeleteTarget(null);
+    } catch (err: any) {
+      setConfirmDeleteTarget(null);
+      Alert.alert("Error", err.message || "Could not delete group");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleInvite = async (groupId: string, groupName: string) => {
@@ -148,17 +156,7 @@ export default function GroupsScreen() {
             </View>
             {Platform.OS === "web" && (
               <TouchableOpacity
-                onPress={async () => {
-                  if (
-                    !confirm(`Delete ${item.name}? All expense will be lost.`)
-                  )
-                    return;
-                  try {
-                    await deleteGroup({ variables: { groupId: item.id } });
-                  } catch (e: any) {
-                    Alert.alert("Error", e.message || "Could not delete group");
-                  }
-                }}
+                onPress={() => setConfirmDeleteTarget(item)}
                 className="ml-2 p-1.5 rounded-lg bg-danger/10"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
@@ -232,7 +230,7 @@ export default function GroupsScreen() {
       {/* ── FAB ── */}
       <Animated.View
         entering={FadeIn.duration(400)}
-        style = {{ position:"absolute", bottom:32, right: 24, }}
+        style={{ position: "absolute", bottom: 32, right: 24 }}
       >
         <PressableScale
           onPress={() => router.push({ pathname: "/group/create" as any })}
@@ -256,6 +254,26 @@ export default function GroupsScreen() {
           </LinearGradient>
         </PressableScale>
       </Animated.View>
+      <ActionSheet
+        visible={!!menuTartget}
+        title={menuTartget?.name}
+        options={groupOPtionsMenu}
+        onCancel={() => setMenuTarget(null)}
+      />
+      <ConfirmDialog
+        visible={!!confirmDeleteTarget}
+        title="Delete Group"
+        message={
+          confirmDeleteTarget
+            ? `Delete "${confirmDeleteTarget.name}"? All expense data will be lost.`
+            : ""
+        }
+        confirmLabel="Delete"
+        destructive
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteTarget(null)}
+      />
     </Screen>
   );
 }

@@ -17,10 +17,10 @@ interface ActionSheetProps {
   message?: string;
   options: ActionSheetOptions[];
   onCancel: () => void;
-  cancelLabel: string;
+  cancelLabel?: string;
 }
 
-export default function ActionSheet({
+export function ActionSheet({
   visible,
   title,
   message,
