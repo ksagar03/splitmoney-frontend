@@ -41,7 +41,7 @@ export function ConfirmDialog({
       <View className="bg-surface rounded-t-4xl border border-brand/20 px-5 pt-3 pb-11">
         <View className="w-10 h-1 rounded-full bg-white/15 mb-5 self-center" />
         <View
-          className={`w-[50px] h-[60px] rounded-full items-center justify-center mb-4 border=[1.5px] ${
+          className={`w-[50px] h-[60px] rounded-full items-center justify-center mb-4 border-[1.5px] ${
             destructive
               ? "bg-danger/15 border-danger/40"
               : "bg-brand/15 border-brand/40"

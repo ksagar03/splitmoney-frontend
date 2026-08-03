@@ -34,6 +34,7 @@ export function ActionSheet({
       transparent
       animationType="slide"
       onRequestClose={onCancel}
+      className="z-40"
     >
       <Pressable className="flex-1 bg-black/60" onPress={onCancel} />
       <View className="bg-surface rounded-t-4xl border border-brand/20 px-5 pt-3 pb-9">
@@ -48,7 +49,7 @@ export function ActionSheet({
             {message}
           </Text>
         )}
-      </View>
+     
       <View className="mt-1">
         {options.map((option) => (
           <PressableScale
@@ -57,7 +58,7 @@ export function ActionSheet({
               onCancel();
               option.onPress();
             }}
-            className="flext-row items-center py-4 px-3 rounded-xl"
+            className="flex-row items-center py-4 px-3 rounded-xl"
           >
             {option.icon && (
               <Ionicons
@@ -86,6 +87,7 @@ export function ActionSheet({
           {cancelLabel}
         </Text>
       </PressableScale>
+       </View>
     </Modal>
   );
 }

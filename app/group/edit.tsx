@@ -14,7 +14,7 @@ import { useAuthStore } from "@/src/store/useAuthStore";
 import { useMutation, useQuery } from "@apollo/client";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -28,6 +28,7 @@ import {
 import Animated from "react-native-reanimated";
 
 export default function EditGroupScreen() {
+  const hasInitialized = useRef(false);
   const { groupId, groupName: initialName } = useLocalSearchParams<{
     groupId: string;
     groupName: string;
@@ -54,8 +55,11 @@ export default function EditGroupScreen() {
   const isAdmin = group?.createdBy?.id === currentUser?.id;
 
   useEffect(() => {
-    if (group?.name && !name) setName(group.name);
-  }, [group, name]);
+    if (group?.name && !hasInitialized.current) {
+      setName(group.name);
+      hasInitialized.current = true;
+    }
+  }, [group?.name]);
 
   const handleSave = async () => {
     if (!name.trim()) {
