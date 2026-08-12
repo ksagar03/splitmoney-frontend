@@ -318,7 +318,7 @@ export default function AuthScreen() {
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: "center",
+            justifyContent: "flex-start",
             alignItems: "center",
             paddingVertical: 40,
             paddingHorizontal: 20,
