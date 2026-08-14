@@ -18,6 +18,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSequence,
+useAnimatedKeyboard,
   withTiming,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
@@ -81,6 +82,11 @@ export default function AuthScreen() {
 
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
+
+  const keyboard = useAnimatedKeyboard()
+  const keyBoardOffsetStyle = useAnimatedStyle(() => ({
+    transform: [{translateY: -keyboard.height.value}]
+  }))
   const triggerShake = () => {
     shakeX.value = withSequence(
       withTiming(10, { duration: 50 }),
@@ -129,7 +135,7 @@ export default function AuthScreen() {
     <Animated.View key={isLogin ? "login" : "register"} entering={FadeIn.duration(280)}>
       <View className="items-center mb-7">
         <Text className="text-ink-faint text-sm font-medium tracking-wide mb-1 uppercase">
-          {isLogin ? "Welcome back" : "Hey there,"}
+          {isLogin ? "Welcome 😉" : "Hey there,"}
         </Text>
         <Text className="text-ink text-[28px] font-extrabold tracking-tight">
           {isLogin ? "Sign in" : "Create account"}
@@ -311,14 +317,10 @@ export default function AuthScreen() {
 
   return (
     <Screen edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
-      >
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: "flex-start",
+            justifyContent: "center",
             alignItems: "center",
             paddingVertical: 40,
             paddingHorizontal: 20,
@@ -326,9 +328,12 @@ export default function AuthScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <Animated.View 
+          style = {keyBoardOffsetStyle}
+          className="w-full max-w-[440px]"
+          >
           <Animated.View
             entering={FadeInUp.duration(500).springify().damping(18)}
-            className="w-full max-w-[440px]"
           >
           <Animated.View
             style={[shakeStyle, {
@@ -347,8 +352,8 @@ export default function AuthScreen() {
             {formFields}
           </Animated.View>
           </Animated.View>
+          </Animated.View>
         </ScrollView>
-      </KeyboardAvoidingView>
     </Screen>
   );
 }
