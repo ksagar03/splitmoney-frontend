@@ -90,6 +90,7 @@ export default function EditExpense() {
                 if (/^[0-9]*\.?[0-9]*$/.test(text)) setAmount(text);
               }}
               keyboardType="decimal-pad"
+              caretHidden={!amount}
               editable={!loading}
             />
           </Animated.View>

@@ -113,6 +113,7 @@ export default function AddExpense() {
                 if (numericRegex.test(text)) setAmount(text);
               }}
               keyboardType="decimal-pad"
+              caretHidden={!amount}
               autoFocus={true}
               editable={!creating}
             />

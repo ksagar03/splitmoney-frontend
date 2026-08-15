@@ -38,7 +38,7 @@ export function ConfirmDialog({
         className="flex-1 bg-black/60"
         onPress={loading ? undefined : onCancel}
       />
-      <View className="bg-surface rounded-t-4xl border border-brand/20 px-5 pt-3 pb-11">
+      <View className="bg-surface rounded-t-4xl border border-brand/20 px-5 pt-3 pb-11 items-center">
         <View className="w-10 h-1 rounded-full bg-white/15 mb-5 self-center" />
         <View
           className={`w-[50px] h-[60px] rounded-full items-center justify-center mb-4 border-[1.5px] ${
@@ -81,9 +81,9 @@ export function ConfirmDialog({
         <PressableScale
           onPress={onCancel}
           disabled={loading}
-          className="py-3 px-8"
+          className="w-full items-center py-3.5 rounded-xl bg-white/[0.05]"
         >
-          <Text className="text-ink-faint text-[15px] font-semibold">
+          <Text className="text-ink-muted  text-[15px] font-semibold">
             {cancelLabel}
           </Text>
         </PressableScale>

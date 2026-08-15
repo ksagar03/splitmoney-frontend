@@ -248,7 +248,13 @@ export default function GroupsScreen() {
             colors={brandGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="w-16 h-16 rounded-full justify-center items-center"
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
           >
             <Ionicons name="add" size={32} color={palette.ink} />
           </LinearGradient>

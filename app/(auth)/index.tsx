@@ -1,31 +1,35 @@
-import { LOGIN_MUTATION, REGISTER_MUTATION, JOIN_GROUP, GET_GROUPS } from "@/src/graphql/mutation";
+import SplitMoneyLogo from "@/src/components/SplitMoneyLogo";
+import { FormField, GradientButton, Screen } from "@/src/components/ui";
+import { brandGradient, palette } from "@/src/constants/theme";
+import {
+  GET_GROUPS,
+  JOIN_GROUP,
+  LOGIN_MUTATION,
+  REGISTER_MUTATION,
+} from "@/src/graphql/mutation";
 import { useAuthStore } from "@/src/store/useAuthStore";
 import { useMutation } from "@apollo/client";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
-  KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
 } from "react-native";
 import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
   FadeOutUp,
+  useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
-useAnimatedKeyboard,
   withTiming,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import SplitMoneyLogo from "@/src/components/SplitMoneyLogo";
-import { Screen, FormField, GradientButton } from "@/src/components/ui";
-import { palette, brandGradient } from "@/src/constants/theme";
 
 /**
  * Maps the structured error from the backend into a user-friendly message.
@@ -39,12 +43,18 @@ function resolveAuthError(error: any): string {
   const code: string | undefined = error.graphQLErrors?.[0]?.extensions?.code;
   if (code) {
     switch (code) {
-      case "INVALID_CREDENTIALS":       return "Incorrect email or password.";
-      case "USER_NOT_FOUND":            return "No account found with that email.";
-      case "EMAIL_ALREADY_REGISTERED":  return "An account with this email already exists.";
-      case "SOCIAL_LOGIN_REQUIRED":     return error.graphQLErrors[0].message;
-      case "MISSING_FIELDS":            return "Please fill in all fields.";
-      default:                          return error.graphQLErrors[0].message ?? "Something went wrong.";
+      case "INVALID_CREDENTIALS":
+        return "Incorrect email or password.";
+      case "USER_NOT_FOUND":
+        return "No account found with that email.";
+      case "EMAIL_ALREADY_REGISTERED":
+        return "An account with this email already exists.";
+      case "SOCIAL_LOGIN_REQUIRED":
+        return error.graphQLErrors[0].message;
+      case "MISSING_FIELDS":
+        return "Please fill in all fields.";
+      default:
+        return error.graphQLErrors[0].message ?? "Something went wrong.";
     }
   }
   if (error.networkError) {
@@ -71,29 +81,35 @@ export default function AuthScreen() {
 
   const setAuth = useAuthStore((state) => state.setAuth);
   const pendingInviteToken = useAuthStore((state) => state.pendingInviteToken);
-  const setPendingInviteToken = useAuthStore((state) => state.setPendingInviteToken);
+  const setPendingInviteToken = useAuthStore(
+    (state) => state.setPendingInviteToken,
+  );
 
-  const [loginMutation, { loading: loginLoading }] = useMutation<any>(LOGIN_MUTATION);
-  const [registerMutation, { loading: registerLoading }] = useMutation<any>(REGISTER_MUTATION);
+  const [loginMutation, { loading: loginLoading }] =
+    useMutation<any>(LOGIN_MUTATION);
+  const [registerMutation, { loading: registerLoading }] =
+    useMutation<any>(REGISTER_MUTATION);
   const [joinGroupMutation] = useMutation(JOIN_GROUP, {
     refetchQueries: [{ query: GET_GROUPS }],
   });
   const isLoading = loginLoading || registerLoading;
 
   const shakeX = useSharedValue(0);
-  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+  }));
 
-  const keyboard = useAnimatedKeyboard()
+  const keyboard = useAnimatedKeyboard();
   const keyBoardOffsetStyle = useAnimatedStyle(() => ({
-    transform: [{translateY: -keyboard.height.value}]
-  }))
+    transform: [{ translateY: -keyboard.height.value / 2 }],
+  }));
   const triggerShake = () => {
     shakeX.value = withSequence(
       withTiming(10, { duration: 50 }),
       withTiming(-10, { duration: 50 }),
       withTiming(8, { duration: 50 }),
       withTiming(-8, { duration: 50 }),
-      withTiming(0, { duration: 40 })
+      withTiming(0, { duration: 40 }),
     );
   };
 
@@ -110,10 +126,14 @@ export default function AuthScreen() {
     }
     try {
       if (isLogin) {
-        const { data: { login } } = await loginMutation({ variables: { email, password } });
+        const {
+          data: { login },
+        } = await loginMutation({ variables: { email, password } });
         await setAuth(login.user, login.token);
       } else {
-        const { data: { register } } = await registerMutation({ variables: { name, email, password } });
+        const {
+          data: { register },
+        } = await registerMutation({ variables: { name, email, password } });
         await setAuth(register.user, register.token);
       }
       if (pendingInviteToken) {
@@ -132,7 +152,10 @@ export default function AuthScreen() {
   // ── Shared form body (used in both web and mobile layouts) ─────────────────
 
   const modeHeader = (
-    <Animated.View key={isLogin ? "login" : "register"} entering={FadeIn.duration(280)}>
+    <Animated.View
+      key={isLogin ? "login" : "register"}
+      entering={FadeIn.duration(280)}
+    >
       <View className="items-center mb-7">
         <Text className="text-ink-faint text-sm font-medium tracking-wide mb-1 uppercase">
           {isLogin ? "Welcome 😉" : "Hey there,"}
@@ -147,12 +170,18 @@ export default function AuthScreen() {
   const formFields = (
     <View className="w-full">
       {!isLogin && (
-        <Animated.View entering={FadeInDown.duration(260)} exiting={FadeOutUp.duration(180)}>
+        <Animated.View
+          entering={FadeInDown.duration(260)}
+          exiting={FadeOutUp.duration(180)}
+        >
           <FormField
             label="Name"
             placeholder="Enter your name"
             value={name}
-            onChangeText={(v) => { setName(v); setErrorMessage(null); }}
+            onChangeText={(v) => {
+              setName(v);
+              setErrorMessage(null);
+            }}
             autoCapitalize="words"
             editable={!isLoading}
           />
@@ -163,7 +192,10 @@ export default function AuthScreen() {
         label="Email"
         placeholder="Enter your email"
         value={email}
-        onChangeText={(v) => { setEmail(v); setErrorMessage(null); }}
+        onChangeText={(v) => {
+          setEmail(v);
+          setErrorMessage(null);
+        }}
         keyboardType="email-address"
         autoCapitalize="none"
         editable={!isLoading}
@@ -173,7 +205,10 @@ export default function AuthScreen() {
         label="Password"
         placeholder="Enter your password"
         value={password}
-        onChangeText={(v) => { setPassword(v); setErrorMessage(null); }}
+        onChangeText={(v) => {
+          setPassword(v);
+          setErrorMessage(null);
+        }}
         secureTextEntry={!showPassword}
         editable={!isLoading}
         rightElement={
@@ -198,7 +233,9 @@ export default function AuthScreen() {
             style={{ gap: 8 }}
           >
             <Ionicons name="alert-circle" size={16} color="#FCA5A5" />
-            <Text className="text-[#FCA5A5] text-[13px] font-medium flex-1">{errorMessage}</Text>
+            <Text className="text-[#FCA5A5] text-[13px] font-medium flex-1">
+              {errorMessage}
+            </Text>
           </View>
         </Animated.View>
       )}
@@ -219,7 +256,10 @@ export default function AuthScreen() {
           {isLogin ? "Don't have an account?" : "Already have an account?"}
         </Text>
         <TouchableOpacity
-          onPress={() => { setIsLogin(!isLogin); setErrorMessage(null); }}
+          onPress={() => {
+            setIsLogin(!isLogin);
+            setErrorMessage(null);
+          }}
           disabled={isLoading}
           className="py-0.5 px-1"
         >
@@ -279,14 +319,24 @@ export default function AuthScreen() {
             </Text>
 
             {BRAND_FEATURES.map((f) => (
-              <View key={f} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <View
+                key={f}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: 14,
+                }}
+              >
                 <LinearGradient
                   colors={brandGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{ width: 8, height: 8, borderRadius: 4 }}
                 />
-                <Text style={{ color: palette.inkMuted, fontSize: 15 }}>{f}</Text>
+                <Text style={{ color: palette.inkMuted, fontSize: 15 }}>
+                  {f}
+                </Text>
               </View>
             ))}
           </LinearGradient>
@@ -303,7 +353,9 @@ export default function AuthScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Animated.View style={[shakeStyle, { width: "100%", maxWidth: 400 }]}>
+            <Animated.View
+              style={[shakeStyle, { width: "100%", maxWidth: 400 }]}
+            >
               {modeHeader}
               {formFields}
             </Animated.View>
@@ -317,43 +369,46 @@ export default function AuthScreen() {
 
   return (
     <Screen edges={["top", "bottom"]}>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            paddingVertical: 40,
-            paddingHorizontal: 20,
-          }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <Animated.View 
-          style = {keyBoardOffsetStyle}
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingVertical: 40,
+          paddingHorizontal: 20,
+        }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View
+          style={keyBoardOffsetStyle}
           className="w-full max-w-[440px]"
-          >
+        >
           <Animated.View
             entering={FadeInUp.duration(500).springify().damping(18)}
           >
-          <Animated.View
-            style={[shakeStyle, {
-              shadowColor: palette.brand,
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.12,
-              shadowRadius: 40,
-              elevation: 12,
-            }]}
-            className="bg-surface rounded-3xl border border-brand/20 px-8 py-9"
-          >
-            <View className="items-center mb-6 pt-2 px-2">
-              <SplitMoneyLogo size={64} bgColor={palette.surface} />
-            </View>
-            {modeHeader}
-            {formFields}
+            <Animated.View
+              style={[
+                shakeStyle,
+                {
+                  shadowColor: palette.brand,
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.12,
+                  shadowRadius: 40,
+                  elevation: 12,
+                },
+              ]}
+              className="bg-surface rounded-3xl border border-brand/20 px-8 py-9"
+            >
+              <View className="items-center mb-6 pt-2 px-2">
+                <SplitMoneyLogo size={64} bgColor={palette.surface} />
+              </View>
+              {modeHeader}
+              {formFields}
+            </Animated.View>
           </Animated.View>
-          </Animated.View>
-          </Animated.View>
-        </ScrollView>
+        </Animated.View>
+      </ScrollView>
     </Screen>
   );
 }
