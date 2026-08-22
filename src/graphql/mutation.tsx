@@ -26,6 +26,19 @@ export const REGISTER_MUTATION = gql`
   }
 `;
 
+export const DEMO_LOGIN_MUTATION = gql`
+  mutation DemoLogin {
+    demoLogin {
+      token
+      user {
+        id
+        name
+        email
+      }
+    }
+  }
+`;
+
 export const GET_GROUPS = gql`
   query GetGroups {
     groups {

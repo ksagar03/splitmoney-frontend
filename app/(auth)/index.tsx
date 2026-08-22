@@ -1,7 +1,8 @@
 import SplitMoneyLogo from "@/src/components/SplitMoneyLogo";
-import { FormField, GradientButton, Screen } from "@/src/components/ui";
+import { FormField, GradientButton, PressableScale, Screen } from "@/src/components/ui";
 import { brandGradient, palette } from "@/src/constants/theme";
 import {
+  DEMO_LOGIN_MUTATION,
   GET_GROUPS,
   JOIN_GROUP,
   LOGIN_MUTATION,
@@ -13,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Platform,
   ScrollView,
   Text,
@@ -92,6 +94,7 @@ export default function AuthScreen() {
   const [joinGroupMutation] = useMutation(JOIN_GROUP, {
     refetchQueries: [{ query: GET_GROUPS }],
   });
+  const [demoLoginMutation,{loading: demoLoading}] = useMutation<any>(DEMO_LOGIN_MUTATION)
   const isLoading = loginLoading || registerLoading;
 
   const shakeX = useSharedValue(0);
@@ -149,6 +152,17 @@ export default function AuthScreen() {
     }
   };
 
+
+  const handleDemoLogin =async() => {
+    setErrorMessage(null)
+    try {
+      const {data } = await demoLoginMutation()
+      await setAuth(data.demoLogin.user, data.demoLogin.token)
+
+    }catch{
+      showError("Could not start the demo. Please try again.")
+    }
+  }
   // ── Shared form body (used in both web and mobile layouts) ─────────────────
 
   const modeHeader = (
@@ -166,6 +180,39 @@ export default function AuthScreen() {
       </View>
     </Animated.View>
   );
+
+  const tryDemoBlock = (
+    <View className="w-full mb-6">
+      <PressableScale
+      onPress={handleDemoLogin}
+      disabled={isLoading || demoLoading}
+      className=" w-full flex-row items-center justify-center gap-2 rounded-xl bg-brand/15 border border-brand/30 py-3.5"
+      >
+        {demoLoading ? (
+          <ActivityIndicator color={palette.brand}/>
+        ):(
+          <>
+          <Ionicons name="flash-outline" size={18} color={palette.brand}/>
+          <Text className="text-brand text-[15px] font-bold">
+            Try the Live Demo
+          </Text>
+          </>
+        )}
+      </PressableScale>
+      <Text className="text-ink-faint text-xs text-center mt-2">
+        Instantly explore a pre-filled account - no signup needed
+      </Text>
+      <View
+      className="flex-row items-center my-5"
+      style={{gap:10}}
+      >
+        <View className="flex-1 h-px bg-white/[0.06]"/>
+        <Text className="text-ink-faint text-[11px] font-semibold uppercase tracking-wider">or</Text>
+        <View className="flex-1 h-px bg-white/[0.06]"/>
+      </View>
+    </View>
+
+  )
 
   const formFields = (
     <View className="w-full">
@@ -357,6 +404,7 @@ export default function AuthScreen() {
               style={[shakeStyle, { width: "100%", maxWidth: 400 }]}
             >
               {modeHeader}
+              {tryDemoBlock}
               {formFields}
             </Animated.View>
           </ScrollView>
@@ -404,6 +452,7 @@ export default function AuthScreen() {
                 <SplitMoneyLogo size={64} bgColor={palette.surface} />
               </View>
               {modeHeader}
+              {tryDemoBlock}
               {formFields}
             </Animated.View>
           </Animated.View>
