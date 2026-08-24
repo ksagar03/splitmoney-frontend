@@ -49,45 +49,45 @@ export function ActionSheet({
             {message}
           </Text>
         )}
-     
-      <View className="mt-1">
-        {options.map((option) => (
-          <PressableScale
-            key={option.label}
-            onPress={() => {
-              onCancel();
-              option.onPress();
-            }}
-            className="flex-row items-center py-4 px-3 rounded-xl"
-          >
-            {option.icon && (
-              <Ionicons
-                name={option.icon}
-                size={19}
-                color={option.destructive ? palette.danger : palette.ink}
-                style={{ marginRight: 12 }}
-              />
-            )}
-            <Text
-              className={`text-[15px] font-semibold ${
-                option.destructive ? "text-danger" : "text-ink"
-              }`}
+
+        <View className="mt-1">
+          {options.map((option) => (
+            <PressableScale
+              key={option.label}
+              onPress={() => {
+                onCancel();
+                option.onPress();
+              }}
+              className="flex-row items-center py-4 px-3 rounded-xl"
             >
-              {option.label}
-            </Text>
-          </PressableScale>
-        ))}
+              {option.icon && (
+                <Ionicons
+                  name={option.icon}
+                  size={19}
+                  color={option.destructive ? palette.danger : palette.ink}
+                  style={{ marginRight: 12 }}
+                />
+              )}
+              <Text
+                className={`text-[15px] font-semibold ${
+                  option.destructive ? "text-danger" : "text-ink"
+                }`}
+              >
+                {option.label}
+              </Text>
+            </PressableScale>
+          ))}
+        </View>
+        <View className="w-full h-px bg-white/[0.06] my-3" />
+        <PressableScale
+          onPress={onCancel}
+          className="items-center justify-center py-3.5 rounded-xl bg-white/[0.05]"
+        >
+          <Text className="text-[15px] font-semibold text-ink-muted">
+            {cancelLabel}
+          </Text>
+        </PressableScale>
       </View>
-      <View className="w-full h-px bg-white/[0.06] my-3" />
-      <PressableScale
-        onPress={onCancel}
-        className="items-center justify-center py-3.5 rounded-xl bg-white/[0.05]"
-      >
-        <Text className="text-[15px] font-semibold text-ink-muted">
-          {cancelLabel}
-        </Text>
-      </PressableScale>
-       </View>
     </Modal>
   );
 }

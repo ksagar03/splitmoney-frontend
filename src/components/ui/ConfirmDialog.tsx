@@ -62,31 +62,35 @@ export function ConfirmDialog({
           </Text>
         )}
         <View className="w-full h-px bg-white/[0.06] my-5" />
-        <PressableScale
-          className={`w-full flex-row items-center justify-center py-3.5 rounded-xl mb-2.5 ${
-            destructive ? "bg-danger" : "bg-brand"
-          }`}
-          onPress={onConfirm}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={palette.ink} />
-          ) : (
-            <Text className="text-ink text-[17px] font-bold">
-              {confirmLabel}
-            </Text>
-          )}
-        </PressableScale>
+        <View className="w-full mb-2.5">
+          <PressableScale
+            className={`w-full flex-row items-center justify-center py-3.5 rounded-xl mb-2.5 ${
+              destructive ? "bg-danger" : "bg-brand"
+            }`}
+            onPress={onConfirm}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={palette.ink} />
+            ) : (
+              <Text className="text-ink text-[17px] font-bold">
+                {confirmLabel}
+              </Text>
+            )}
+          </PressableScale>
+        </View>
 
-        <PressableScale
-          onPress={onCancel}
-          disabled={loading}
-          className="w-full items-center py-3.5 rounded-xl bg-white/[0.05]"
-        >
-          <Text className="text-ink-muted  text-[15px] font-semibold">
-            {cancelLabel}
-          </Text>
-        </PressableScale>
+        <View className="w-full">
+          <PressableScale
+            onPress={onCancel}
+            disabled={loading}
+            className="flex-row items-center justify-center py-3.5 rounded-xl bg-white/[0.05]"
+          >
+            <Text className="text-ink-muted  text-[15px] font-semibold">
+              {cancelLabel}
+            </Text>
+          </PressableScale>
+        </View>
       </View>
     </Modal>
   );
