@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { useAuthStore } from "../store/useAuthStore";
+import { isTokenExpired } from "../utils/tokens";
 
 function getGraphQLUri(): string {
   // If an explicit URI is set (production build pointing at Render), always use it
@@ -35,6 +36,10 @@ const httpLink = new HttpLink({
 
 const authLink = setContext(async (_, { headers }) => {
   const token = await AsyncStorage.getItem("@auth_token");
+  if (token && isTokenExpired(token)) {
+    await useAuthStore.getState().logout();
+    return { headers: { ...headers, authorization: "" } };
+  }
   return {
     headers: {
       ...headers,
@@ -43,11 +48,12 @@ const authLink = setContext(async (_, { headers }) => {
   };
 });
 
-const errorLink = onError(({ graphQLErrors }) => {
+const errorLink = onError(({ graphQLErrors , networkError }) => {
   const isUnauth = graphQLErrors?.some(
     (err) => err.extensions?.code === "UNAUTHENTICATED",
   );
-  if (isUnauth) {
+  const statusCode = (networkError as any)?.statusCode;
+  if (isUnauth || statusCode === 401 || statusCode === 403) {
     useAuthStore.getState().logout();
   }
 });

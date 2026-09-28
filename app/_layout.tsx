@@ -5,6 +5,7 @@ import {Slot, useRouter, useSegments } from "expo-router";
 import {useEffect, useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import '../global.css'
+import { isTokenExpired } from "@/src/utils/tokens";
 
 function AuthGuard() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -18,12 +19,14 @@ function AuthGuard() {
         '@auth_token',
         '@auth_user',
       ]);
-      if (storedToken) {
+      if (storedToken && !isTokenExpired(storedToken)) {
         useAuthStore.setState({
           token: storedToken,
           isAuthenticated: true,
           user: storedUser ? JSON.parse(storedUser) : null,
         });
+      }else if (storedToken){
+        await AsyncStorage.multiRemove(['@auth_token', '@auth_user']);
       }
       setIsBootstrapping(false);
     })();
